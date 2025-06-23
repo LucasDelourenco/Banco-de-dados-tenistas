@@ -38,3 +38,26 @@ void TH_imprime(TH tab, int n);
 
 
 
+/*
+Ex hash de vencedores de torneios COM ANO  (guarda o id de quem ganhou E o ANO!)
+
+0)GrandSlam
+1)ATP1000
+2)ATPFinals
+3)Olimpiedas
+
+
+EX hash de PontuacaoPorAno (cada linha é o ano, e guarda o ID da pessoa e sua pontuacao)
+
+*/
+
+/*
+HASHS
+
+PontuacaoPorAno n = 35                (Q4) (Q3) (Q6!) (Q8)
+Nome (alfabético a->linha 0)
+VencedoresDeTorneiosComAno            (Q1) (Q2) (Q5) (Q9)
+Nacionalidade                         (Q2) (Q7)
+
+
+]*/

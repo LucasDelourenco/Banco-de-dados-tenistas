@@ -4,46 +4,142 @@
 
 /*
 typedef struct tenistas{
-  int id, ano_nascimento, morte, rank, YoBK, numSem, pontuacao;
-  char nome[51], pais[51];
+  //tenistas.txt
+  int id, ano_nascimento, morte, rank, YoBK, numSem;
+  char nome[51],sobrenome[51], pais[51];  //nome é nome + sobrenome
+  //champions.txt
+  int pontuacao;
+  int anoGanhouTodosGrands; //Q(5)
+  int TorneiosGanhos[15];
 }TT;
 */
 
 TT TT_cria_vazio(){
   TT novo;
+  //tenistas.txt
   novo.id = -1;
   novo.ano_nascimento = -1;
   novo.morte = -1;
   novo.rank = -1;
   novo.YoBK = -1;
   novo.numSem = -1;
-  novo.pontuacao = -1;
   strcpy(novo.nome,"\0");
   strcpy(novo.pais,"\0");
+  //champions.txt
+  novo.pontuacao = 0;
+  novo.anoGanhouTodosGrands=-1;
+  for(int i = 0; i<15; i++) novo.TorneiosGanhos[i] = 0;
   return novo;
 }
 
+TT TT_completaInfoChampionsTxt(TT tenista){
+  //durante a coleta de infos, jogar nas hashs (ex: hash ganhadores de torneios)
 
+  //preencher campos: Pontuacao, TorneiosGanhos, anoGanhouTodosGrands
 
+  int indicetorneios, qtdTotTitulos=0, qtdTitulosLidos=0, ano, qtdGrandSlamNesseAno;
+  int torneiosPts[15] = {2000,2000,2000,2000,0,0,1000,1000,1000,1000,1000,1000,1000,1000,1000};
+  char *lido, sobrenome[51], linha[300], sobrenomeTT[51];
 
-TT *TARVBMT_cria(char *arq,int t){
-  
-}
+  FILE *fp = fopen("champions.txt","r"); //IPC lembrar desse ".txt"!!
+  fgets(linha,sizeof(linha),fp); //Pula a primeira linha (aka o cabeçalho)
+  //fgets(linha,sizeof(linha),fp); //Pega a primeira linha de informacoes
+  while(fgets(linha, sizeof(linha), fp)){ //Enquanto existir proxima linha, pega ela e:
+    lido = strtok(linha,"\\"); //pega a primeira parte até "\" que é o ano
+    ano = atoi(lido);
+    lido = strtok(NULL,"\\"); //pega o primeiro "bloco" de campeao
+    indicetorneios = 0;
+    qtdGrandSlamNesseAno = 0;
+    while(lido && indicetorneios<15){
+      sscanf(lido,"%[^(] (%*d/%*d)",sobrenome); //lê o sobrenome
+      if(sobrenome[strlen(sobrenome) -1] == ' ') sobrenome[strlen(sobrenome) -1] = '\0'; //retira o possivel espaço em branco do final
+      //Pega a parte do sobrenome do nome (Pablo Afonso Pereira -> Afonso Pereira)
+      int pos = 0;
+      sscanf(tenista.nome, "%*s %n", &pos);  // pega a posição após o primeiro nome
+      strcpy(sobrenomeTT, tenista.nome + pos); //sobrenomeTT tem o sobrenome do TT
+      //
+      if(strcmp(sobrenome,sobrenomeTT)==0){ //É o tenista na posicao indiceTorneios (PREENCHENDO SUAS INFORMACOES)
+        if(qtdTotTitulos==0) sscanf(lido,"%*[^(] (%*d/%d)",&qtdTotTitulos);
+        tenista.pontuacao += torneiosPts[indicetorneios];
+        qtdTitulosLidos++;
+        tenista.TorneiosGanhos[indicetorneios]++;
+        if(indicetorneios<=3) qtdGrandSlamNesseAno++;
 
+        //!!HASH!! Inserir o caba na HASH DE VENCEDORES DE TORNEIO COM ANO ("TT.id", "TT.pontuacao" e "ano")
+        
 
-TARVBMT *TARVBMT_inicializa(void){
-  return NULL;
-}
+        if(qtdTitulosLidos == qtdTotTitulos) break;
+      }
 
-void TARVBMT_libera(TARVBMT *a){
-  if(a){
-    if(!a->folha){
-      int i;
-      for(i = 0; i <= a->nchaves; i++) TARVBMT_libera(a->filho[i]);
+      
+      lido = strtok(NULL,"\\"); //vai pegando o conjunto de infos (até nao ter mais) do tipo:   "Lendl (1/1)" 
+      indicetorneios++;
     }
-    free(a->filho);
-    free(a->chave);
-    free(a);
+    //acabou esse ano
+    if(qtdGrandSlamNesseAno==4) tenista.anoGanhouTodosGrands = ano;
+
+    //!!HASH!! Inserir o caba na HASH DE PONTUACAO POR ANO ("TT.id", "TT.pontuacao" e "ano")
+    
+    if(qtdTotTitulos!=0 && qtdTitulosLidos == qtdTotTitulos) break;
+  }
+
+  fclose(fp);
+  return tenista;
+}
+
+//Lê o(s) txt(s), monta o ID e ja manda insere na arvore direto
+TT TARVBMT_criaPorTxt(char *arq,int t){
+
+
+  //durante a coleta de infos, jogar nas hashs
+  
+  
+  //encher torneios ganhos com 0 nas 15 posicoes antes de chamar completaInfoChampionsTxt  (Foi criado o TT_cria_vazio() como um inicializa)
+
+
+  //!!HASH!! Inserir o caba na HASH DE NOME ("TT.id")
+}
+
+
+
+
+//"Inicializa" nao é necessario
+void TARVBMT_inicializa(char *arq){ //ja deve receber o nome com .bin no final(Indices.bin)
+  /*
+  char nome[51];
+  strcpy(nome,arq);
+  strcat(nome,".bin");
+  */
+}
+
+int int_len(int num){
+  if(num == 0) return 1;
+  int count=0;
+  while(num>0){
+    num/=10;
+    count++;
+  }
+  return count;
+}
+
+//remove o arquivo de indices, chama remove hashs e remove todos os arquivos folhas
+void TARVBMT_libera(char *arq){ //nome deve vir como Indices.bin
+  FILE *fp = fopen(arq,"rb+");
+  fseek(fp,0L,SEEK_END);
+  int nfolhas,fim = ftell(fp) - sizeof(int);
+  fseek(fp,fim,SEEK_SET);
+  fread(&nfolhas,sizeof(int),1,fp);
+  fclose(fp);
+  remove(arq);
+  liberaHashs();
+  char nome[51],string_i[6];
+  for(int i = 0; i<nfolhas; i++){
+    strcpy(nome,"./infos/F");
+    for(int j = 0; j < 4 - int_len(i); j++) strcat(nome,"0");
+    sprintf(string_i,"%d",i);
+    strcat(nome,string_i);
+    strcat(nome,".bin");
+    remove(nome);
   }
 }
 
@@ -216,6 +312,7 @@ TARVBMT *TARVBMT_insere(TARVBMT *T, TT tenista, int t){
   T = insere_nao_completo(T, mat, t);
   return T;
 }
+
 
 
 TARVBMT* remover(TARVBMT* arv, int ch, int t){
@@ -466,33 +563,99 @@ void insere_nao_completo_MS(FILE *f_indice, TT *tenista, int t){ //WIP
 
 void divisao_MS(FILE *f_indice, int pos_pai, int i, int pos_y, int t){ //WIP
   //OBS: f_indice terá que ser aberto em rb+!!!!!!!!!!
+
   //pos_pai: posicao onde o pai se encontra no arquivo indice
   //i: posicao onde o novo filho será inserido
   //pos_y: posicao do nó que será dividido
 
   //y é folha?
-  char no;
+  char no, nome_no[6];
+  int pont_aux; //ponteiro auxiliar, facilita o uso de fseek e ftell
   int j, nchaves, *chaves = (int*)malloc(sizeof(int)*((t*2)-1));
-  char **filhos, rotulo[10], aux[10];
+  int nfolhas;
+  
+  for (j=0;j<(2*t)-1;j++) chaves[j] = -1;
+
+  char **filhos = (char **)malloc(sizeof(char*)*2*t), rotulo[10], aux[10];
+
+  for (j=0;j<(2*t);j++) filhos[j] = "\0";
+
+  fseek(f_indice, pos_y, SEEK_SET); //anda ate o no que sera dividido
   fread(no, sizeof(char), 1, f_indice);
   if (no != 'F'){
     nchaves = t-1;
-    fseek(f_indice, pos_y, SEEK_SET); //anda até nó pra ser dividido
-    fseek(f_indice, sizeof(char)*6, SEEK_CUR); //Pula o rótulo Nxxxx
-    fwrite(nchaves, sizeof(int), 1, f_indice);  //Atualiza o numero de chaves
-    fseek(f_indice, sizeof(int)*(t-1), SEEK_CUR); //Pula t-1 chaves 
+    fseek(f_indice, pos_y, SEEK_SET); //anda ate no pra ser dividido
+    fread(nome_no, sizeof(char), 6, f_indice); //Le o rotulo Nxxxx
+    fseek(f_indice, sizeof(int), SEEK_CUR); //Pula o numero de chaves
+    fseek(f_indice, sizeof(int)*(t), SEEK_CUR); //Pula t chaves 
+
     for(j=0;j<t-1;j++){
-      fread(chaves[j], sizeof(int), 1, f_indice);
-    }
-    fseek(f_indice, -sizeof(int)*(t-1), SEEK_CUR);
-    for(j=0;j<t-1;j++){
-      fwrite(-1, sizeof(int), 1, f_indice);
+      fread(chaves[j], sizeof(int), 1, f_indice); //Le a chave j
+      pont_aux = ftell(f_indice) - sizeof(int);
+      fseek(f_indice, pont_aux, SEEK_SET);
+      fwrite(-1, sizeof(int), 1, f_indice); //Reescreve com -1 (retira a chave)
     }
 
+    fseek(f_indice, sizeof(char)*6*(t-1), SEEK_CUR); //Anda t-1 filhos
     for (j=0; j<t; j++){
-    fread(rotulo, sizeof(char), 1, f_indice);
-    if (rotulo == '\0') continue;
+      fread(filhos[j], sizeof(char), 6, f_indice); //Le o filho
+      pont_aux = ftell(f_indice) - sizeof(char)*6;
+      fseek(f_indice, pont_aux, SEEK_SET);
+      fwrite("\0", sizeof(char), 6, f_indice); //Reescreve com \0 (retira o filho)
+    }
+    fflush(f_indice);   //Quando usamos fwrite, a escrita eh mandada para um buffer
+    //                  fflush manda escrever imediatamente
+  }
+  else {
+    char tmpNomeFolha1[6], tmpNomeFolha2[6];
+    int folha_y, tmp;
+
+    nchaves = t;
+    fseek(f_indice, pos_y, SEEK_SET); //anda ate no pra ser dividido
+    fseek(f_indice, sizeof(char)*6, SEEK_CUR); //Pula o rotulo Nxxxx
+    fseek(f_indice, sizeof(int), SEEK_CUR); //Pula o numero de chaves
+    fseek(f_indice, sizeof(int)*(t-1), SEEK_CUR); //Pula t-1 chaves
+    for(j=0;j < t;j++){
+      fread(chaves[j], sizeof(int), 1, f_indice); //Le a chave j
+      pont_aux = ftell(f_indice) - sizeof(int);
+      fseek(f_indice, pont_aux, SEEK_SET);
+      fwrite(-1, sizeof(int), 1, f_indice); //Reescreve com -1 (retira a chave)
+    }
+    //mexer no arquivo
+    //Ajustar as folhas
+    fseek(f_indice, 0L, SEEK_END);
+    pont_aux = ftell(f_indice) - sizeof(int);
+    fseek(f_indice, pont_aux, SEEK_SET);
+    fread(&nfolhas, sizeof(int), 1, f_indice);
+    folha_y = atoi(&nome_no[1]);
+    for (j = nfolhas-1; j > folha_y; j--){
+      tmp = j;
+      gera_nome_folha(tmpNomeFolha1, tmp);//Assumindo que todos os nos internos terao
+      //                                    todos os seus filhos
+      aumenta_um(tmpNomeFolha1, tmpNomeFolha2);
+      copia_arquivo(tmpNomeFolha1, tmpNomeFolha2);
+      pont_aux = busca_pos_no(f_indice, tmpNomeFolha1, t);
+      fseek(f_indice, pont_aux, SEEK_SET);
+      fwrite(tmpNomeFolha2, sizeof(char), 6, f_indice); //Sobreescreve o nome da folha velha
+    }
+
+    //Criar a folha z e adicionar ela
     
     }
+    
+
+    fflush(f_indice);   //Quando usamos fwrite, a escrita eh mandada para um buffer
+    //                  fflush manda escrever imediatamente
   }
+
+  FILE *fy = fopen(nome_no, "rb+");
+  if (fy){
+    fseek(fy, 0L, SEEK_END);
+    pont_aux = ftell(fy) - sizeof(int);
+    fseek(fy, pont_aux, SEEK_SET);
+    fwrite((t-1), sizeof(int), 1, fy);  //Atualiza o numero de chaves de y
+    fclose(fy);
+  }
+  else perror("Erro ao atualizar o numero de chaves do nó dividido");
+
 }
