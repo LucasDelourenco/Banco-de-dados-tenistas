@@ -6,7 +6,7 @@
 typedef struct tenistas{
   //tenistas.txt
   int id, ano_nascimento, morte, rank, YoBK, numSem;
-  char nome[51],sobrenome[51], pais[51];  //nome é nome + sobrenome
+  char nome[51], pais[51];  //nome é nome + sobrenome
   //champions.txt
   int pontuacao;
   int anoGanhouTodosGrands; //Q(5)
@@ -87,30 +87,100 @@ TT TT_completaInfoChampionsTxt(TT tenista){
   return tenista;
 }
 
-//Lê o(s) txt(s), monta o ID e ja manda insere na arvore direto
-TT TARVBMT_criaPorTxt(char *arq,int t){
+int posPaisEmVet(char *pais,char *vetPais[40]){
+    for(int i = 0; i<40; i++) if(vetPais[i]!=NULL && strcmp(pais,vetPais[i]) == 0) return i;
+    return -1;
+}
+//durante a coleta de infos, jogar nas hashs
+
+//Lê o(s) txt(s), monta o ID e ja manda insere na arvore direto (Cria a arvore no começo do programa)
+void TARVBMT_criaPorTxt(int t){ //int t só usado para o insere (se o insere nao precisar tire o parametro dessa funcao)
+  FILE *fp = fopen("tennis_players.txt","r");
+  if(!fp) exit(1);
+  TT tenista;
+  char *lido, linha[120], nome[51];
+  int ano, campo, indPais=10, indCpf=100, semanatemp=-1;
+  int TTidPais,TTidCpf,TTidAno;
+  //char vetPais[50][51]; //50 paises de no maximo 51 caracteres
+  char *vetPais[50];
+  for (int i = 0; i < 50; i++) {
+    vetPais[i] = malloc(51 * sizeof(char));
+  }
+  fgets(linha,sizeof(linha),fp); //Pula o cabeçalho
+  while(fgets(linha,sizeof(linha),fp)){ //começa a ler as linhas que importam
+    tenista = TT_cria_vazio();
+    lido = strtok(linha,"\\");
+    strcpy(tenista.nome,lido);
+    lido = strtok(NULL,"\\");
+    tenista.ano_nascimento = atoi(lido);
+        
+    TTidCpf = indCpf++;  //TTidCpf recebe o indice e DEPOIS o indice aumenta em 1 (para o proximo)
+    TTidAno = tenista.ano_nascimento - 1950;
+
+    lido = strtok(NULL,"\\");
+    campo = 2;
+    semanatemp = -1;
+    while(lido){
+      if(strcmp(lido,"-")!=0){
+        switch (campo){
+        case 2: //ano morte
+          tenista.morte = atoi(lido);
+          break;
+        case 3: //nacionalidade
+          strcpy(tenista.pais,lido);
+          int pos = posPaisEmVet(tenista.pais,vetPais);
+          if(pos >= 0) TTidPais =  pos+10;
+          else{
+            strcpy(vetPais[indPais-10],tenista.pais);
+            TTidPais = indPais++;
+          }
+          break;
+        case 4:
+          tenista.rank = atoi(lido);
+          break;
+        case 5:
+          sscanf(lido,"%d (%d)",&tenista.YoBK,&semanatemp);
+          if(semanatemp && semanatemp>0) tenista.numSem = semanatemp;
+          break;
+        default:
+          break;
+        }
+      }
+      lido = strtok(NULL,"\\");
+      campo++;
+    }
+
+    tenista.id = (TTidCpf * 10000) + (TTidPais * 100) + TTidAno;
+    tenista = TT_completaInfoChampionsTxt(tenista);
+
+    //!!HASH!! Inserir o caba na HASH DE NOME ("TT.id","TT.nome")
+    //!!HASH!! Inserir o caba na HASH DE NACIONALIDADE ("TT.id","TT.pais")
 
 
-  //durante a coleta de infos, jogar nas hashs
-  
-  
-  //encher torneios ganhos com 0 nas 15 posicoes antes de chamar completaInfoChampionsTxt  (Foi criado o TT_cria_vazio() como um inicializa)
+    //!!  TARVBMT_insere(tenista, t)  !!
 
 
-  //!!HASH!! Inserir o caba na HASH DE NOME ("TT.id")
+    //printf para debug -> printa todos os jogadores com suas infos (quase todas infos)
+    //printf("%s - %d: %d | %d | %s | %d | %d | %d | %d\n",tenista.nome,tenista.id,tenista.ano_nascimento,tenista.morte,tenista.pais,tenista.rank,tenista.YoBK,tenista.numSem,tenista.pontuacao);
+  }
+
+  fclose(fp);
+  for (int i = 0; i < 50; i++) { //liberando o vetor de paises
+      free(vetPais[i]);
+  }
 }
 
 
 
-
-//"Inicializa" nao é necessario
+/*"Inicializa" nao é necessario
 void TARVBMT_inicializa(char *arq){ //ja deve receber o nome com .bin no final(Indices.bin)
   /*
   char nome[51];
   strcpy(nome,arq);
   strcat(nome,".bin");
-  */
+  
 }
+*/
 
 int int_len(int num){
   if(num == 0) return 1;
@@ -131,7 +201,7 @@ void TARVBMT_libera(char *arq){ //nome deve vir como Indices.bin
   fread(&nfolhas,sizeof(int),1,fp);
   fclose(fp);
   remove(arq);
-  liberaHashs();
+  liberaHashs(); //Ainda deve ser implementada
   char nome[51],string_i[6];
   for(int i = 0; i<nfolhas; i++){
     strcpy(nome,"./infos/F");
@@ -550,7 +620,7 @@ void TARVBMT_insere_MS (TT *tenista, char arq_ind, int t){ //WIP     //O primeir
     
     fwrite("N0000", sizeof(char), 6, f_tmp);  //Escreve no novo arquivo a chave que subiu (Simula return S)
     fwrite(1, sizeof(int), 1, f_tmp);
-    fwrite(chave, sizeof(int), 1, f_tmp);
+    fwrite(&chave, sizeof(int), 1, f_tmp);
     
     //Dificuldade em implementar o resto da inserção, fui implementar a Divisão para poder continuar
     //21/06/2025 21:37
@@ -561,7 +631,143 @@ void insere_nao_completo_MS(FILE *f_indice, TT *tenista, int t){ //WIP
   
 }
 
-void divisao_MS(FILE *f_indice, int pos_pai, int i, int pos_y, int t){ //WIP
+void gerar_nome_no(char *retorno, int num_nos_internos){
+  char aux[5];
+  strcpy(retorno, "N");
+  if (num_nos_internos%1000 > 0){
+    sprintf(aux, "%d", num_nos_internos);
+    strcat(retorno, aux);
+  }
+  else if (num_nos_internos%100 > 0){
+    strcat(retorno, "0");
+    sprintf(aux, "%d", num_nos_internos);
+    strcat(retorno, aux);
+  }
+  else if (num_nos_internos%10 > 0){
+    strcat(retorno, "00");
+    sprintf(aux, "%d", num_nos_internos);
+    strcat(retorno, aux);
+  }
+  else {
+    strcat(retorno, "000");
+    sprintf(aux, "%d", num_nos_internos);
+    strcat(retorno, aux);
+  }
+}
+
+void gerar_nome_folha(char *retorno, int num_folhas){
+  char aux[5];
+  strcpy(retorno, "F");
+  if (num_folhas/1000 > 0){
+    sprintf(aux, "%d", num_folhas);
+    strcat(retorno, aux);
+  }
+  else if (num_folhas/100 > 0){
+    strcat(retorno, "0");
+    sprintf(aux, "%d", num_folhas);
+    strcat(retorno, aux);
+  }
+  else if (num_folhas/10 > 0){
+    strcat(retorno, "00");
+    sprintf(aux, "%d", num_folhas);
+    strcat(retorno, aux);
+  }
+  else {
+    strcat(retorno, "000");
+    sprintf(aux, "%d", num_folhas);
+    strcat(retorno, aux);
+  }
+}
+
+long buscar_pos_no(FILE *f_indice, char *nome_no, int t){
+  int tamPorBloco, N, finalDosBlocos;
+  char aux[6];
+  
+  fseek(f_indice, 0L, SEEK_END); 
+  finalDosBlocos = ftell(f_indice) - sizeof(int);  //Descobre o final do ultimo bloco
+  tamPorBloco = (sizeof(char)*6 + sizeof(int) + sizeof(int)*((2*t)-1) + (sizeof(char)*6)*(2*t));
+  if (nome_no[0] == 'N'){  //Se for no interno pula direto pro nó desejado
+    strcpy(aux, &nome_no[1]);
+    N = atoi(aux);
+    return tamPorBloco * N;
+  }
+  else if (nome_no[0] == 'F'){  //Se for filho olha os filhos de cada nó
+    int blocoSemFilho = (sizeof(char)*6 + sizeof(int) + sizeof(int)*((2*t)-1)), i;
+    fseek(f_indice, blocoSemFilho, SEEK_SET);
+    while (1){
+      for (i=0; i<2*t; i++){
+        fread(aux, sizeof(char), 6, f_indice);
+        if (memcmp(aux, "\0\0\0\0\0\0", 6) == 0) continue; //Se o filho for vazio pule um loop
+        else if (strlen(aux) == 1 && aux[0] == 'N') continue; //Se for no interno pule um loop
+        else if (strcmp(aux, nome_no) == 0){ //Achou o rótulo do filho
+          return ftell(f_indice) - sizeof(char)*6;
+        }
+      }
+      fseek(f_indice, blocoSemFilho, SEEK_CUR); //Vai para o próximo conjunto de filhos
+      if (ftell(f_indice) > finalDosBlocos - sizeof(char)*6*(2*t)) break;  //Caso a próxima leitura passe do final do ultimo bloco, parar
+    }
+  }
+
+  return -1; //O parametro passado está errado, esperava: "Nxxxx\0" ou "Fxxxx\0"
+}
+
+int copia_arquivo(char *nome_ent, char *nome_saida){
+  if (strcmp(nome_ent, nome_saida) == 0) return 0;
+  char entrada[10], saida[10];
+  strcpy(entrada, nome_ent);
+  strcpy(saida, nome_saida);
+  strcat(entrada, ".bin");
+  strcat(saida, ".bin");
+  FILE *f_orig = fopen(entrada, "rb");
+  if (!f_orig){
+    perror("Func:copia_arquivo. Erro ao abrir o arquivo de entrada\n");
+    return 0;
+  }
+
+  FILE *f_dest = fopen(saida, "wb");
+  if (!f_dest){
+    perror("Func:copia_arquivo. Erro ao criar o arquivo de destino\n");
+    fclose(f_orig);
+    return 0;
+  }
+
+  char buffer[1024];
+  size_t bytes;
+
+  while ((bytes = fread(buffer, 1, sizeof(buffer), f_orig)) > 0) {
+      fwrite(buffer, 1, bytes, f_dest);
+  }
+
+  fclose(f_orig);
+  fclose(f_dest);
+  return 1;
+}
+
+char* aumenta_um(char *nome_ent) {
+    int num = atoi(&nome_ent[1]) + 1;
+
+    // Proteção contra estouro (máximo 9999)
+    if (num > 9999) return NULL;
+
+    char *resp = malloc(6 * sizeof(char)); // 5 + '\0'
+    if (!resp) return NULL;
+
+    sprintf(resp, "%c%04d", nome_ent[0], num);
+    return resp;
+}
+
+int campo_vazio(char* campo) {
+  int n = strlen(campo);
+  for (int i = 0; i < n; i++) {
+      if (campo[i] != '\0') return 0;
+  }
+  return 1;
+}
+
+
+
+void divisao_MS(char *indice, long pos_pai, long pos_y, int t){ //WIP
+  FILE *f_indice = fopen(indice, "rb+");
   //OBS: f_indice terá que ser aberto em rb+!!!!!!!!!!
 
   //pos_pai: posicao onde o pai se encontra no arquivo indice
@@ -569,57 +775,192 @@ void divisao_MS(FILE *f_indice, int pos_pai, int i, int pos_y, int t){ //WIP
   //pos_y: posicao do nó que será dividido
 
   //y é folha?
-  char no, nome_no[6];
+  char no, nome_no[6], *aux = (char*)malloc(sizeof(char)*11), *aux2 = (char*)malloc(sizeof(char)*11);
   int pont_aux; //ponteiro auxiliar, facilita o uso de fseek e ftell
-  int j, nchaves, *chaves = (int*)malloc(sizeof(int)*((t*2)-1));
-  int nfolhas;
-  
-  for (j=0;j<(2*t)-1;j++) chaves[j] = -1;
+  int j, nchaves_z, *chaves_z = (int*)malloc(sizeof(int)*((2*t)-1));
+  int nfolhas, ntenistas, chave_que_sobe, temp, chave_atual;
+  int chave_vazia = -1;
 
-  char **filhos = (char **)malloc(sizeof(char*)*2*t), rotulo[10], aux[10];
+  for (j=0;j<(2*t)-1;j++) chaves_z[j] = -1;
 
-  for (j=0;j<(2*t);j++) filhos[j] = "\0";
+  char **filhos_z = (char **)malloc(sizeof(char*)*2*t);
+  for (j=0;j<(2*t);j++){
+    filhos_z[j] = malloc(sizeof(char)*6);
+    memset(filhos_z[j], '\0', 6);
+  }
 
   fseek(f_indice, pos_y, SEEK_SET); //anda ate o no que sera dividido
-  fread(no, sizeof(char), 1, f_indice);
+  fread(&no, sizeof(char), 1, f_indice);
+
   if (no != 'F'){
-    nchaves = t-1;
+    nchaves_z = t-1;
     fseek(f_indice, pos_y, SEEK_SET); //anda ate no pra ser dividido
     fread(nome_no, sizeof(char), 6, f_indice); //Le o rotulo Nxxxx
-    fseek(f_indice, sizeof(int), SEEK_CUR); //Pula o numero de chaves
-    fseek(f_indice, sizeof(int)*(t), SEEK_CUR); //Pula t chaves 
+    fwrite(&nchaves_z, sizeof(int), 1, f_indice); //Reescreve o numero de chaves de y;  chaves de y e z sao iguais
+    fseek(f_indice, sizeof(int)*(t-1), SEEK_CUR); //Pula t-1 chaves 
+    fread(&chave_que_sobe, sizeof(int), 1, f_indice); //Le a t-ésima chave que vai subir pro pai
+    pont_aux = ftell(f_indice) - sizeof(int);
+    fseek(f_indice, pont_aux, SEEK_SET);
+    fwrite(&chave_vazia, sizeof(int), 1, f_indice); //Reescreve com -1 (retira a chave)
 
     for(j=0;j<t-1;j++){
-      fread(chaves[j], sizeof(int), 1, f_indice); //Le a chave j
+      fread(&chaves_z[j], sizeof(int), 1, f_indice); //Le a chave j
       pont_aux = ftell(f_indice) - sizeof(int);
       fseek(f_indice, pont_aux, SEEK_SET);
-      fwrite(-1, sizeof(int), 1, f_indice); //Reescreve com -1 (retira a chave)
+      fwrite(&chave_vazia, sizeof(int), 1, f_indice); //Reescreve com -1 (retira a chave)
     }
 
-    fseek(f_indice, sizeof(char)*6*(t-1), SEEK_CUR); //Anda t-1 filhos
+    fseek(f_indice, sizeof(char)*6*(t), SEEK_CUR); //Anda t filhos
     for (j=0; j<t; j++){
-      fread(filhos[j], sizeof(char), 6, f_indice); //Le o filho
+      fread(filhos_z[j], sizeof(char), 6, f_indice); //Le o filho
       pont_aux = ftell(f_indice) - sizeof(char)*6;
       fseek(f_indice, pont_aux, SEEK_SET);
       fwrite("\0", sizeof(char), 6, f_indice); //Reescreve com \0 (retira o filho)
     }
     fflush(f_indice);   //Quando usamos fwrite, a escrita eh mandada para um buffer
     //                  fflush manda escrever imediatamente
-  }
-  else {
-    char tmpNomeFolha1[6], tmpNomeFolha2[6];
-    int folha_y, tmp;
 
-    nchaves = t;
+    //Atualizar o numero de chaves do pai
+    fseek(f_indice, pos_pai + sizeof(char)*6, SEEK_SET); //Vai até o pai e pula o rotulo
+    fread(&temp, sizeof(int), 1, f_indice); //Le o nchaves do no
+    temp++;                                 //Atualiza nchaves
+    pont_aux = ftell(f_indice) - sizeof(int); //Volta um inteiro para poder reescrever 
+    fseek(f_indice, pont_aux, SEEK_SET);
+    fwrite(&temp, sizeof(int), 1, f_indice); //Reescreve o nchaves do no
+
+    fseek(f_indice, sizeof(int)*((2*t)-3), SEEK_CUR); //Prepara para atualizar
+
+    //Atualizar as chaves do pai 
+    for (j=0; j<(2*t)-1; j++){
+      if (j == (2*t)-2){
+        fwrite(&chave_que_sobe, sizeof(int), 1, f_indice);
+        continue;
+      }
+      fread(&chave_atual, sizeof(int), 1, f_indice);
+      if (chave_que_sobe > chave_atual){
+        fwrite(&chave_que_sobe, sizeof(int), 1, f_indice);
+        break;
+      }
+      else if (chave_que_sobe < chave_atual){
+        fwrite(&chave_atual, sizeof(int), 1, f_indice);
+      }
+      pont_aux = ftell(f_indice) - sizeof(int)*3;
+      fseek(f_indice, pont_aux, SEEK_SET);
+    }
+
+    //Atualizar filhos do pai
+    //Como o numero de filhos será menor que 2t, para um no com n filhos, adicionar o filho n+1
+
+    fseek(f_indice, sizeof(int)*((2*t)-1-temp), SEEK_CUR); //Vai para o primeiro filho do pai
+
+    for (j=0; j<2*t; j++){
+      fread(aux, sizeof(char), 6, f_indice);
+      if (campo_vazio(aux)){  //Se achar um espaço vazio, escrever o novo filho
+        pont_aux = ftell(f_indice) - sizeof(char)*6*2; //Calcula a pos do filho anterior ao espaço vazio
+        fseek(f_indice, pont_aux, SEEK_SET);  //Pula para este filho
+        fread(aux, sizeof(char), 6, f_indice); //Le o filho
+        char *aux2 = aumenta_um(aux);
+        fwrite(aux2, sizeof(char), 6, f_indice); //Escreve no espaco vazio
+        free(aux2);
+        break;
+      }
+    }
+
+    //Atualizar todos os nos de f_indice que vem depois do no que esta sendo dividido
+    //Se N0005 esta sendo dividido, todos os nos depois aumentam em 1 para poder inserir o novo N0006
+    //... - N0004 - N0005 - N0007 - ...
+    int numBloco = 0, numBlocoRest;
+    fseek(f_indice, 0L, SEEK_END);
+    pont_aux = ftell(f_indice) - sizeof(int);
+    fseek(f_indice, pont_aux, SEEK_SET);
+    fread(&numBloco, sizeof(int), 1, f_indice);
+
+    int tamBloco = sizeof(char)*6 + sizeof(int) + sizeof(int)*(2*t)-1 + sizeof(char)*6*(2*t);
+    temp = atoi(&nome_no[1]);
+    temp++;
+    numBlocoRest = numBloco - temp;
+    fseek(f_indice, (temp)*tamBloco, SEEK_SET);
+
+    for (j=0; j<numBlocoRest; j++){
+      fread(aux, sizeof(char), 6, f_indice);
+      pont_aux = ftell(f_indice) - sizeof(char)*6;
+      fseek(f_indice, pont_aux, SEEK_SET);
+      aux2 = aumenta_um(aux);
+      fwrite(aux2, sizeof(char), 6, f_indice);
+      free(aux2);
+      fseek(f_indice, tamBloco-sizeof(char)*6, SEEK_CUR);
+    }
+    fflush(f_indice);
+
+    //Escrever novo arq_ind em um temp e depois trocar o nome
+    FILE *fnovo = fopen("novo.bin", "wb");
+    size_t bytes; 
+    char buffer[tamBloco];
+    fseek(f_indice, 0L, SEEK_SET);
+
+    while (bytes = fread(buffer, 1, tamBloco, f_indice) > 0 && temp > 0){ //Escreve tudo até passar do nó que foi dividido
+      fwrite(buffer, 1, bytes, fnovo);
+      temp --;
+    }
+
+    if (temp > 0){
+      printf("Erro na escrita de um novo arquivo indice!!!!!!\n");
+      free(chaves_z);
+      free(aux);
+      for (j = 0; j < 2*t; j++) {
+        free(filhos_z[j]); // libera cada string, se tiver sido alocada
+      }
+      free(filhos_z); // libera o vetor de ponteiros
+      fclose(fnovo);
+      return;
+    }
+
+    //Escreve o novo no
+    strcpy(aux, nome_no);
+    aux2 = aumenta_um(aux);
+    fwrite(aux, sizeof(char), 6, fnovo);
+    free(aux2);
+    fwrite(&nchaves_z, sizeof(int), 1, fnovo);
+    for (j=0; j<(2*t)-1; j++){
+      fwrite(&chaves_z[j], sizeof(int), 1, fnovo);
+    }
+    for (j=0; j<2*t; j++){
+      fwrite(filhos_z[j], sizeof(char), 6, fnovo);
+    }
+    
+    temp = numBlocoRest;
+    while (bytes = fread(buffer, 1, tamBloco, f_indice) > 0 && temp > 0){ //Escreve o restante dos nos
+      fwrite(buffer, 1, bytes, fnovo);
+      temp --;
+    }
+
+    //Criou um novo no interno, atualizar o num de no interno
+    numBloco++;
+    fwrite(&numBloco, sizeof(int), 1, fnovo);
+
+    fclose(f_indice);
+    fclose(fnovo);
+
+    remove(indice);
+    strcpy(aux, "novo.bin");
+    rename(aux, indice);
+
+  }
+  else { //Caso seja folha - Falta testar
+    char *tmpNomeFolha1 = (char*)malloc(sizeof(char)*6);
+    char *tmpNomeFolha2 = (char*)malloc(sizeof(char)*6);
+    int folha_y;
+
+    //nchaves = t;
     fseek(f_indice, pos_y, SEEK_SET); //anda ate no pra ser dividido
-    fseek(f_indice, sizeof(char)*6, SEEK_CUR); //Pula o rotulo Nxxxx
+    fread(nome_no, sizeof(char), 6, f_indice); //Le o rotulo Nxxxx
     fseek(f_indice, sizeof(int), SEEK_CUR); //Pula o numero de chaves
     fseek(f_indice, sizeof(int)*(t-1), SEEK_CUR); //Pula t-1 chaves
     for(j=0;j < t;j++){
-      fread(chaves[j], sizeof(int), 1, f_indice); //Le a chave j
+      fread(&chaves_z[j], sizeof(int), 1, f_indice); //Le a chave j
       pont_aux = ftell(f_indice) - sizeof(int);
       fseek(f_indice, pont_aux, SEEK_SET);
-      fwrite(-1, sizeof(int), 1, f_indice); //Reescreve com -1 (retira a chave)
+      fwrite(&chave_vazia, sizeof(int), 1, f_indice); //Reescreve com -1 (retira a chave)
     }
     //mexer no arquivo
     //Ajustar as folhas
@@ -628,34 +969,79 @@ void divisao_MS(FILE *f_indice, int pos_pai, int i, int pos_y, int t){ //WIP
     fseek(f_indice, pont_aux, SEEK_SET);
     fread(&nfolhas, sizeof(int), 1, f_indice);
     folha_y = atoi(&nome_no[1]);
-    for (j = nfolhas-1; j > folha_y; j--){
-      tmp = j;
-      gera_nome_folha(tmpNomeFolha1, tmp);//Assumindo que todos os nos internos terao
-      //                                    todos os seus filhos
-      aumenta_um(tmpNomeFolha1, tmpNomeFolha2);
+    for (j = nfolhas-1; j > folha_y; j--){ //Assumindo que todos os nos internos terao todos os seus filhos
+      gerar_nome_folha(tmpNomeFolha1, j);
+      tmpNomeFolha2 = aumenta_um(tmpNomeFolha1);
       copia_arquivo(tmpNomeFolha1, tmpNomeFolha2);
-      pont_aux = busca_pos_no(f_indice, tmpNomeFolha1, t);
-      fseek(f_indice, pont_aux, SEEK_SET);
-      fwrite(tmpNomeFolha2, sizeof(char), 6, f_indice); //Sobreescreve o nome da folha velha
-    }
 
-    //Criar a folha z e adicionar ela
-    
+      pont_aux = buscar_pos_no(f_indice, tmpNomeFolha1, t) + sizeof(char)*6;
+      fseek(f_indice, pont_aux, SEEK_SET);
+      fwrite(tmpNomeFolha2, sizeof(char), 6, f_indice); //Sobreescreve o nome da folha vazia
+
+      free(tmpNomeFolha2);
     }
+    j--;
+    //Criar a folha z e adicionar ela
+    gerar_nome_folha(tmpNomeFolha1, j); //Cria o nome da folha, j = folha_y
+    gerar_nome_folha(tmpNomeFolha2, j+1); //Cria o nome da folha, j = folha_y + 1
+    strcpy(aux, tmpNomeFolha1);
+    strcat(aux, ".bin");
+    FILE *f1 = fopen(aux, "wb");
+    strcpy(aux, tmpNomeFolha2);
+    strcat(aux, ".bin");
+    FILE *f2 = fopen(aux, "rb");
+    FILE *ftmp = fopen("temp.bin", "wb");
+    TT tenista;
+    int cont1=0, conttmp=0;
+
+    fseek(f2, 0L, SEEK_END);
+    pont_aux = ftell(f2) - sizeof(int);
+    fseek(f2, pont_aux, SEEK_SET);
+    fread(&ntenistas, sizeof(int), 1, f2);
+    fseek(f2, 0L, SEEK_SET);
+
+    for (j=0;j<ntenistas;j++){
+      fread(&tenista, sizeof(TT), 1, f2);
+      if (j<t-1){
+        fwrite(&tenista, sizeof(TT), 1, f1);
+        cont1 ++;
+      }
+      else {
+        fwrite(&tenista, sizeof(TT), 1, ftmp);
+        conttmp ++;
+      }
+    }
+    fwrite(&cont1, sizeof(int), 1, f1);
+    fwrite(&conttmp, sizeof(int), 1, ftmp);
+    fclose(f2);
+    fclose(ftmp);
+    fclose(f1);
     
+    strcpy(aux, tmpNomeFolha2);
+    strcat(aux, ".bin");
+    remove(aux);
+    rename("temp.bin", aux);
 
     fflush(f_indice);   //Quando usamos fwrite, a escrita eh mandada para um buffer
     //                  fflush manda escrever imediatamente
-  }
 
-  FILE *fy = fopen(nome_no, "rb+");
-  if (fy){
-    fseek(fy, 0L, SEEK_END);
-    pont_aux = ftell(fy) - sizeof(int);
-    fseek(fy, pont_aux, SEEK_SET);
-    fwrite((t-1), sizeof(int), 1, fy);  //Atualiza o numero de chaves de y
-    fclose(fy);
-  }
-  else perror("Erro ao atualizar o numero de chaves do nó dividido");
+    free(tmpNomeFolha1);
+    free(tmpNomeFolha2);
+  } //Fim do caso folha
 
+  free(chaves_z);
+  free(aux);
+  for (j = 0; j < 2*t; j++) {
+    free(filhos_z[j]); // libera cada string, se tiver sido alocada
+  }
+  free(filhos_z); // libera o vetor de ponteiros
+
+}
+
+
+int main(void){
+  //divisao_MS();
+  FILE *fp = fopen("INDICES.bin","rb+");
+  long num = buscar_pos_no(fp,"N0000",2);
+  printf("%ld\n",num);
 }

@@ -6,12 +6,11 @@
 typedef struct tenistas{
   //tenistas.txt
   int id, ano_nascimento, morte, rank, YoBK, numSem;
-  char nome[51],sobrenome[51], pais[51];  //nome é nome + sobrenome
+  char nome[51], pais[51];  //nome é nome + sobrenome
   //champions.txt
   int pontuacao;
   int anoGanhouTodosGrands; //Q(5)
   int TorneiosGanhos[15];
-
 }TT;
 //ID: [CPF(100-537)] [Nacion(10-59)] [AnoNasc(10-54)]
 //       3 digs          2 digs          2 digs        =  7 digs total

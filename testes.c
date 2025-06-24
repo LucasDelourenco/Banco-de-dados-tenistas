@@ -87,11 +87,13 @@ TT TT_completaInfoChampionsTxt(TT tenista){
 
 void teste_TT_completaInfoChampionsTxt(){ //FUNCIONA AHAHAHAHHA!!!!  :D
     TT tenista = TT_cria_vazio();
-    strcpy(tenista.nome,"Rafael Nadal"); //Michael Stich
+    strcpy(tenista.nome,"Michael Stich"); //Michael Stich  //Rafael Nadal
     tenista = TT_completaInfoChampionsTxt(tenista);
     printf("Pontos : %d\nQuantidade De Titulos:\n",tenista.pontuacao);
     printf("AusOpn - %d\nFrenchOpn - %d\nWimbledon - %d\nUsOpn - %d\nATPFinals - %d\nOlimpicGames - %d\nIndianWells - %d\nMiami - %d\nMonteCarlo - %d\nMadrid - %d\nRome - %d\nCanada - %d\nCincinnati - %d\nShanghai - %d\nParis - %d\n",tenista.TorneiosGanhos[0],tenista.TorneiosGanhos[1],tenista.TorneiosGanhos[2],tenista.TorneiosGanhos[3],tenista.TorneiosGanhos[4],tenista.TorneiosGanhos[5],tenista.TorneiosGanhos[6],tenista.TorneiosGanhos[7],tenista.TorneiosGanhos[8],tenista.TorneiosGanhos[9],tenista.TorneiosGanhos[10],tenista.TorneiosGanhos[11],tenista.TorneiosGanhos[12],tenista.TorneiosGanhos[13],tenista.TorneiosGanhos[14]);
 }
+
+
 
 
 void teste_strncmp(){
@@ -219,6 +221,7 @@ void teste_string2(){
     printf("\n%s",sobrenome);
 }
 
+//lendo champions
 void teste_leituraTxt(){ //FUNCIONA!!   THE ONE PIECE IS REAL!
     FILE *fp = fopen("champions.txt", "r");
     if (!fp) exit(1);
@@ -288,6 +291,212 @@ void teste_leituraTxt(){ //FUNCIONA!!   THE ONE PIECE IS REAL!
     */
 }
 
+int posPaisEmVet(char *pais,char *vetPais[40]){
+    for(int i = 0; i<40; i++) if(vetPais[i]!=NULL && strcmp(pais,vetPais[i]) == 0) return i;
+    return -1;
+}
+
+//lendo tenistas.txt
+void teste_leituraTxt2(){ //AKA TARVBMT_criaPorTxt
+    FILE *fp = fopen("tennis_players.txt","r");
+    if(!fp) exit(1);
+    TT tenista;
+    char *lido, linha[120], nome[51];
+    int ano, campo, indPais=10, indCpf=100, semanatemp=-1;
+    int TTidPais,TTidCpf,TTidAno;
+    //char vetPais[50][51]; //50 paises de no maximo 51 caracteres
+    char *vetPais[40];
+    for (int i = 0; i < 40; i++) {
+        vetPais[i] = malloc(51 * sizeof(char));
+    }
+    fgets(linha,sizeof(linha),fp); //Pula o cabeçalho
+    while(fgets(linha,sizeof(linha),fp)){ //começa a ler as linhas que importam
+        tenista = TT_cria_vazio();
+        lido = strtok(linha,"\\");
+        strcpy(tenista.nome,lido);
+        lido = strtok(NULL,"\\");
+        tenista.ano_nascimento = atoi(lido);
+        
+        TTidCpf = indCpf++;  //TTidCpf recebe o indice e DEPOIS o indice aumenta em 1 (para o proximo)
+        TTidAno = tenista.ano_nascimento - 1950;
+
+        lido = strtok(NULL,"\\");
+        campo = 2;
+        semanatemp = -1;
+        while(lido){
+            if(strcmp(lido,"-")!=0){
+                switch (campo){
+                case 2: //ano morte
+                    tenista.morte = atoi(lido);
+                    break;
+                case 3: //nacionalidade
+                    strcpy(tenista.pais,lido);
+                    int pos = posPaisEmVet(tenista.pais,vetPais);
+                    if(pos >= 0) TTidPais =  pos+10;
+                    else{
+                        strcpy(vetPais[indPais-10],tenista.pais);
+                        TTidPais = indPais++;
+                    }
+                    break;
+                case 4:
+                    tenista.rank = atoi(lido);
+                    break;
+                case 5:
+                    sscanf(lido,"%d (%d)",&tenista.YoBK,&semanatemp);
+                    if(semanatemp && semanatemp>0) tenista.numSem = semanatemp;
+                    break;
+                default:
+                    break;
+                }
+            }
+            lido = strtok(NULL,"\\");
+            campo++;
+        }
+
+        tenista.id = (TTidCpf * 10000) + (TTidPais * 100) + TTidAno;
+        tenista = TT_completaInfoChampionsTxt(tenista);
+
+        //!!HASH!! Inserir o caba na HASH DE NOME ("TT.id","TT.nome")
+        //!!HASH!! Inserir o caba na HASH DE NACIONALIDADE ("TT.id","TT.pais")
+
+
+        //!!  TARVBMT_insere(tenista)  !!
+
+        //printf para debug -> printa todos os jogadores com suas infos (quase todas infos)
+        printf("%s - %d: %d | %d | %s | %d | %d | %d | %d\n",tenista.nome,tenista.id,tenista.ano_nascimento,tenista.morte,tenista.pais,tenista.rank,tenista.YoBK,tenista.numSem,tenista.pontuacao);
+
+    }
+
+    fclose(fp);
+    for (int i = 0; i < 40; i++) { //liberando o vetor de paises
+        free(vetPais[i]);
+    }
+}
+
+void Cria_indicesTeste(){
+    FILE *fp = fopen("INDICES.bin","wb+");
+    char nome[51];
+    int id,num;
+
+    //arq indice
+    id = 20087967;
+    num = 1;
+    strcpy(nome,"N0000");
+    fwrite(&nome,sizeof(char),6,fp);
+    fwrite(&num,sizeof(int),1,fp);
+    fwrite(&id,sizeof(int),1,fp);
+    id = -1;
+    fwrite(&id,sizeof(int),1,fp);
+    id = -1;
+    fwrite(&id,sizeof(int),1,fp);
+    strcpy(nome,"N0001");
+    fwrite(&nome,sizeof(char),6,fp);
+    strcpy(nome,"N0002");
+    fwrite(&nome,sizeof(char),6,fp);
+    strcpy(nome,"\0");
+    fwrite(&nome,sizeof(char),6,fp);
+    strcpy(nome,"\0");
+    fwrite(&nome,sizeof(char),6,fp);
+
+    id = 1035780;
+    num = 3;
+    strcpy(nome,"N0001");
+    fwrite(&nome,sizeof(char),6,fp);
+    fwrite(&num,sizeof(int),1,fp);
+    fwrite(&id,sizeof(int),1,fp);
+    id = 1045780;
+    fwrite(&id,sizeof(int),1,fp);
+    id = 1055780;
+    fwrite(&id,sizeof(int),1,fp);
+    strcpy(nome,"F0000");
+    fwrite(&nome,sizeof(char),6,fp);
+    strcpy(nome,"F0001");
+    fwrite(&nome,sizeof(char),6,fp);
+    strcpy(nome,"F0002");
+    fwrite(&nome,sizeof(char),6,fp);
+    strcpy(nome,"F0003");
+    fwrite(&nome,sizeof(char),6,fp);
+
+    id = 30087570;
+    num = 1;
+    strcpy(nome,"N0002");
+    fwrite(&nome,sizeof(char),6,fp);
+    fwrite(&num,sizeof(int),1,fp);
+    fwrite(&id,sizeof(int),1,fp);
+    id = -1;
+    fwrite(&id,sizeof(int),1,fp);
+    id = -1;
+    fwrite(&id,sizeof(int),1,fp);
+    strcpy(nome,"F0004");
+    fwrite(&nome,sizeof(char),6,fp);
+    strcpy(nome,"F0005");
+    fwrite(&nome,sizeof(char),6,fp);
+    strcpy(nome,"\0");
+    fwrite(&nome,sizeof(char),6,fp);
+    strcpy(nome,"\0");
+    fwrite(&nome,sizeof(char),6,fp);
+
+    num = 6;
+    fwrite(&num,sizeof(int),1,fp);
+    fclose(fp);
+
+
+    //arqs folhas
+    fp = fopen("./infos/F0000.bin","wb+");
+    TT tenista = TT_cria_vazio();
+    num = 1;
+    strcpy(tenista.nome,"Pedro");
+    tenista.id = 1001010;
+    strcpy(tenista.pais,"Brazil");
+    fwrite(&tenista,sizeof(TT),1,fp);
+    fwrite(&num,sizeof(int),1,fp);
+    fclose(fp);
+
+    fp = fopen("./infos/F0001.bin","wb+");
+    num = 1;
+    strcpy(tenista.nome,"Gustavo");
+    tenista.id = 1001010;
+    strcpy(tenista.pais,"Brazil");
+    fwrite(&tenista,sizeof(TT),1,fp);
+    fwrite(&num,sizeof(int),1,fp);
+    fclose(fp);
+
+    fp = fopen("./infos/F0002.bin","wb+");
+    num = 1;
+    strcpy(tenista.nome,"Leandro Barros");
+    tenista.id = 1001010;
+    strcpy(tenista.pais,"Brazil");
+    fwrite(&tenista,sizeof(TT),1,fp);
+    fwrite(&num,sizeof(int),1,fp);
+    fclose(fp);
+
+    fp = fopen("./infos/F0003.bin","wb+");
+    num = 1;
+    strcpy(tenista.nome,"Luis");
+    tenista.id = 1001010;
+    strcpy(tenista.pais,"Brazil");
+    fwrite(&tenista,sizeof(TT),1,fp);
+    fwrite(&num,sizeof(int),1,fp);
+    fclose(fp);
+
+    fp = fopen("./infos/F0004.bin","wb+");
+    num = 1;
+    strcpy(tenista.nome,"Fernando");
+    tenista.id = 1001010;
+    strcpy(tenista.pais,"Brazil");
+    fwrite(&tenista,sizeof(TT),1,fp);
+    fwrite(&num,sizeof(int),1,fp);
+    fclose(fp);
+
+    fp = fopen("./infos/F0005.bin","wb+");
+    num = 1;
+    strcpy(tenista.nome,"Pablo");
+    tenista.id = 1001010;
+    strcpy(tenista.pais,"Brazil");
+    fwrite(&tenista,sizeof(TT),1,fp);
+    fwrite(&num,sizeof(int),1,fp);
+    fclose(fp);
+}
 
 int main(void){
    //teste_appendArqBin();
@@ -295,6 +504,8 @@ int main(void){
    //printf("\n\n%d\n",int_len(5732));
    //teste_leituraTxt();
    //teste_string2();
-    teste_TT_completaInfoChampionsTxt();
+    //teste_TT_completaInfoChampionsTxt();
+    //teste_leituraTxt2();
+    //Cria_indicesTeste();
    
 }
