@@ -14,9 +14,9 @@ typedef struct tenistas{
 typedef struct linhaHashPontuacaoPorAno{ //tipo 0
   int id, pontuacao;
   struct linhaHashPontuacaoPorAno *prox;
-}THPl;
+}THpts;
 typedef struct linhaHashVencedoresDeTorneiosComAno{ //tipo 1
-  int id, ano;
+  int id, ano, qtdNoAno;
   struct linhaHashVencedoresDeTorneiosComAno *prox;
 }THVl;
 typedef struct linhaHashSoId{ //tipo 2
@@ -42,21 +42,50 @@ Pontuacao(?): pont/1000 = hash               (pontuacao max: 88k)
 #define TAM4 15
 //
 
-typedef THPl* THP[TAM0];
+typedef THpts* THP[TAM0];
 typedef THid* THNOM[TAM1];
 typedef THVl* THV[TAM2];
 typedef THid* THNAC[TAM3];
-typedef THid* THT[TAM4];
-
-int TH_hash(int mat, int n);
-void TH_inicializa(TH tab, int n);
-FILE* TH_busca(TH tab, int n, int mat); //retorna o arquivo em que o cara está
-void TH_insere(TH tab, int n, int mat, float cr);
-void TH_libera(TH tab, int n);
-float TH_retira(TH tab, int n, int mat);
-void TH_imprime(TH tab, int n);
+typedef THpts* THT[TAM4];
 
 
+
+int THP_hash(int ano);
+int THNOM_hash(char nome[51]);
+int THV_hash(int indiceTorneios);
+int THNAC_hash(int indicePais);
+int THT_hash(int indiceTorneios);
+
+void THP_inicializa_hashs(THP thp);
+void THNOM_inicializa_hashs(THNOM thnom);
+void THV_inicializa_hashs(THV thv);
+void THNAC_inicializa_hashs(THNAC thnac);
+void THT_inicializa_hashs(THT tht);
+void inicializaTodasHashs(THP thp,THNOM thnom, THV thv, THNAC thnac, THT tht);
+
+THpts* THP_aloca(int id, int pontuacao);
+THid* THNOM_aloca(int id);
+THVl* THV_aloca(int id, int ano, int qtd);
+THid* THNAC_aloca(int id);
+THpts* THT_aloca(int id, int pontuacao);
+
+void THP_insere(THP tab, int id, int pontuacao, int ano);
+void THNOM_insere(THNOM tab, int id,char nome[51]);
+void THV_insere(THV tab, int id, int indiceTorneios, int ano);
+void THNAC_insere(THNAC tab, int id);
+void THT_insere(THT tab, int id, int indiceTorneios, int pontuacao);
+
+void THP_libera(THP tab);
+void THNOM_libera(THNOM tab);
+void THV_libera(THV tab);
+void THNAC_libera(THNAC tab);
+void THT_libera(THT tab);
+
+void THP_retira(THP tab, int id);
+void THNOM_retira(THNOM tab, int id, char nome[51]);
+void THV_retira(THV tab, int id);
+void THNAC_retira(THNOM tab, int id);
+void THT_retira(THP tab, int id);
 
 /*
 Ex hash de vencedores de torneios COM ANO  (guarda o id de quem ganhou E o ANO!)
@@ -69,14 +98,17 @@ Ex hash de vencedores de torneios COM ANO  (guarda o id de quem ganhou E o ANO!)
 
 EX hash de PontuacaoPorAno (cada linha é o ano, e guarda o ID da pessoa e sua pontuacao)
 
+EX VencedoresDosTorneios  (cada linha é um dos 15 torneios, e gaurda o ID e a pontuacao da pessoa)
+
 */
 
 /*
+
 HASHS
 
 PontuacaoPorAno n = 35                (Q4) (Q3) (Q6!) (Q8)
 Nome (alfabético a->linha 0)
-VencedoresDeTiposDeTorneiosComAno     (Q1) (Q2) (Q5) 
+VencedoresDeTiposDeTorneiosComAno    -(Q1)-(Q2) (Q5) 
 Nacionalidade                         (Q2) (Q7)
 VencedoresDosTorneios                 (Q9)
 

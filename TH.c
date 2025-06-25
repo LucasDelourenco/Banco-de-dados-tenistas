@@ -105,8 +105,8 @@ FILE* TH_busca(TH tab, int tipo, int mat){
   return NULL;
 }*/
 
-THPl* THP_aloca(int id, int pontuacao){
-  THPl *novo = (THPl*) malloc (sizeof (THPl));
+THpts* THP_aloca(int id, int pontuacao){
+  THpts *novo = (THpts*) malloc (sizeof (THpts));
   novo->id = id;
   novo->pontuacao = pontuacao;
   novo->prox = NULL;
@@ -118,49 +118,167 @@ THid* THNOM_aloca(int id){
   novo->prox = NULL;
   return novo;
 }
-THVl* THV_aloca(int id, int ano){
+THVl* THV_aloca(int id, int ano, int qtd){
   THVl *novo = (THVl*) malloc (sizeof (THVl));
   novo->id = id;
+  novo->qtdNoAno = qtd;
   novo->ano = ano;
   novo->prox = NULL;
   return novo;
 }
-THid* THNAC_aloca(int id, int pontuacao){
+THid* THNAC_aloca(int id){
   THid *novo = (THid*) malloc (sizeof (THid));
   novo->id = id;
   novo->prox = NULL;
   return novo;
 }
-THid* THT_aloca(int id, int pontuacao){
-  THid *novo = (THid*) malloc (sizeof (THid));
+THpts* THT_aloca(int id, int pontuacao){
+  THpts *novo = (THpts*) malloc (sizeof (THpts));
   novo->id = id;
+  novo->pontuacao = pontuacao;
   novo->prox = NULL;
   return novo;
 }
 
+//Insere em ordem decrescente de pontuacao (Na hora de fazer a Q4 é só ler até 25 de cada linha dessa hash)
 void THP_insere(THP tab, int id, int pontuacao, int ano){
   int h = THP_hash(ano);
-  THPl *p = tab[h],*ant = NULL;
-  while((p) && (p->pontuacao < pontuacao)){
+  THpts *p = tab[h],*ant = NULL;
+  while((p) && (p->id < id)){
     ant = p;
     p = p->prox;
   }
-  if((p) && (p->pontuacao == pontuacao)){
-    p->id = id;
+  if((p) && (p->id == id)){ //Se eu achei o cara, tira ele e adiciona de novo para ficar em ordem de pontos
+    pontuacao += p->pontuacao;
+    THP_retira(id,ano);
+    THP_insere(tab,id,pontuacao,ano);
     return;
+  } //Se nao achou, vou inserir em ordem de pontos
+  p = tab[h],ant = NULL;
+  while((p) && (p->pontuacao > pontuacao)){
+    ant = p;
+    p = p->prox;
   }
-  THPl *novo = THP_aloca(id, pontuacao);
+  THpts *novo = THP_aloca(id, pontuacao);
   novo->prox = p;
   if(!ant)tab[h] = novo;
   else ant->prox = novo;
 }
-//continuar daqui
+void THNOM_insere(THNOM tab, int id,char nome[51]){
+  int h = THNOM_hash(nome);
+  THid *p = tab[h],*ant = NULL;
+  while((p) && (p->id < id)){
+    ant = p;
+    p = p->prox;
+  }
+  if((p) && (p->id == id))return;
+  THid *novo = THNOM_aloca(id);
+  novo->prox = p;
+  if(!ant)tab[h] = novo;
+  else ant->prox = novo;
+}
+void THV_insere(THV tab, int id, int indiceTorneios, int ano){
+  int h = THV_hash(indiceTorneios);
+  THVl *p = tab[h],*ant = NULL;
+  while((p) && (p->id < id)){
+    ant = p;
+    p = p->prox;
+  }
+  if((p) && (p->id == id)){
+    p->qtdNoAno++;  //Se o cara ja ganhou nesse ano antes, a qtdNoAno aumenta um
+    return;
+  }
+  THVl *novo = THV_aloca(id, ano, 1);
+  novo->prox = p;
+  if(!ant)tab[h] = novo;
+  else ant->prox = novo;
+}
+void THNAC_insere(THNAC tab, int id){
+  int indicePais = id%10000;
+  indicePais/=100; //pega a parte do ID que fala a nacionalidade
+  int h = THNAC_hash(indicePais);
+  THid *p = tab[h],*ant = NULL;
+  while((p) && (p->id < id)){
+    ant = p;
+    p = p->prox;
+  }
+  if((p) && (p->id == id)) return;
+  THid *novo = THNAC_aloca(id);
+  novo->prox = p;
+  if(!ant)tab[h] = novo;
+  else ant->prox = novo;
+}
+void THT_insere(THT tab, int id, int indiceTorneios, int pontuacao){
+  int h = THT_hash(indiceTorneios);
+  THpts *p = tab[h],*ant = NULL;
+  while((p) && (p->id < id)){
+    ant = p;
+    p = p->prox;
+  }
+  if((p) && (p->id == id)){
+    p->pontuacao = pontuacao;  //atualiza a pontuacao
+    return;
+  }
+  THpts *novo = THT_aloca(id, pontuacao);
+  novo->prox = p;
+  if(!ant)tab[h] = novo;
+  else ant->prox = novo;
+}
 
-void TH_libera(TH tab, int n){
+
+void THP_libera(THP tab){
   int i;
-  for(i = 0; i < n; i++)
+  for(i = 0; i < 35; i++)
     if(tab[i]){
-      TT *p = tab[i], *q;
+      THpts *p = tab[i], *q;
+      while(p){
+        q = p;
+        p = p->prox;
+        free(q);
+      }
+    }
+}
+void THNOM_libera(THNOM tab){
+  int i;
+  for(i = 0; i < 26; i++)
+    if(tab[i]){
+      THid *p = tab[i], *q;
+      while(p){
+        q = p;
+        p = p->prox;
+        free(q);
+      }
+    }
+}
+void THV_libera(THV tab){
+  int i;
+  for(i = 0; i < 4; i++)
+    if(tab[i]){
+      THVl *p = tab[i], *q;
+      while(p){
+        q = p;
+        p = p->prox;
+        free(q);
+      }
+    }
+}
+void THNAC_libera(THNAC tab){
+  int i;
+  for(i = 0; i < 50; i++)
+    if(tab[i]){
+      THid *p = tab[i], *q;
+      while(p){
+        q = p;
+        p = p->prox;
+        free(q);
+      }
+    }
+}
+void THT_libera(THT tab){
+  int i;
+  for(i = 0; i < 15; i++)
+    if(tab[i]){
+      THpts *p = tab[i], *q;
       while(p){
         q = p;
         p = p->prox;
@@ -169,23 +287,79 @@ void TH_libera(TH tab, int n){
     }
 }
 
-float TH_retira(TH tab, int n, int mat){
-  int h = TH_hash(mat, n);
-  if(!tab[h]) return FLT_MIN;
-  TT *p = tab[h],*ant = NULL;
-  float cr = FLT_MIN;
-  while((p) && (p->mat < mat)){
+
+void THP_retira(THP tab, int id){ //retira de todas as linhas(todos os anos)
+  for(int i=0;i<35;i++){
+    if(!tab[i]) continue;
+    THpts *p = tab[i],*ant = NULL;
+    while((p) && (p->id != id)){
+      ant = p;
+      p = p->prox;
+    }
+    if((!p) || (p->id != id)) continue;
+    if(!ant) tab[i] = p->prox;
+    else ant->prox = p->prox;
+    free(p);
+  }
+}
+void THNOM_retira(THNOM tab, int id, char nome[51]){ //retira de todas as linhas(todos os anos)
+  int h = THNOM_hash(nome);
+  if(!tab[h]) return;
+  THid *p = tab[h],*ant = NULL;
+  while((p) && (p->id != id)){
     ant = p;
     p = p->prox;
   }
-  if((!p) || (p->mat != mat)) return cr;
+  if((!p) || (p->id != id)) return;
   if(!ant) tab[h] = p->prox;
   else ant->prox = p->prox;
-  cr = p->cr;
   free(p);
-  return cr;
+}
+void THV_retira(THV tab, int id){ //retira de todas as linhas(todos os tiposDeTorneios)
+  for(int i=0;i<4;i++){
+    if(!tab[i]) continue;
+    THVl *p = tab[i],*ant = NULL;
+    while((p) && (p->id != id)){
+      ant = p;
+      p = p->prox;
+    }
+    if((!p) || (p->id != id)) continue;
+    if(!ant) tab[i] = p->prox;
+    else ant->prox = p->prox;
+    free(p);
+  }
+}
+void THNAC_retira(THNOM tab, int id){ 
+  int indicePais = id%10000;
+  indicePais/=100; //pega a parte do ID que fala a nacionalidade
+  int h = THNAC_hash(indicePais);
+  if(!tab[h]) return;
+  THid *p = tab[h],*ant = NULL;
+  while((p) && (p->id != id)){
+    ant = p;
+    p = p->prox;
+  }
+  if((!p) || (p->id != id)) return;
+  if(!ant) tab[h] = p->prox;
+  else ant->prox = p->prox;
+  free(p);
+}
+void THT_retira(THP tab, int id){ //retira de todas as linhas(todos os torneios)
+  for(int i=0;i<15;i++){
+    if(!tab[i]) continue;;
+    THpts *p = tab[i],*ant = NULL;
+    while((p) && (p->id != id)){
+      ant = p;
+      p = p->prox;
+    }
+    if((!p) || (p->id != id)) continue;
+    if(!ant) tab[i] = p->prox;
+    else ant->prox = p->prox;
+    free(p);
+  }
 }
 
+/*
 void TH_imprime(TH tab, int n){
   int i;
   for(i = 0; i < n; i++){
@@ -200,4 +374,29 @@ void TH_imprime(TH tab, int n){
     }
     else printf("NULL\n");
   }
+}
+  */
+
+void inicializaTodasHashs(THP thp,THNOM thnom, THV thv, THNAC thnac, THT tht){
+  THP_inicializa_hashs(thp);
+  THNOM_inicializa_hashs(thnom);
+  THV_inicializa_hashs(thv);
+  THNAC_inicializa_hashs(thnac);
+  THT_inicializa_hashs(tht);
+}
+
+int main(void){
+  //modelo de como ficaria a main
+  THP thp;
+  THNOM thnom;
+  THV thv;
+  THNAC thnac;
+  THT tht;
+  inicializaTodasHashs(thp,thnom,thv,thnac,tht);
+
+  int *paises;
+
+  //...
+
+  //paises = TARVBMT_criaPorTxt(t,thp,thnom,thv,thnac,tht)
 }
