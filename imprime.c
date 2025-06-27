@@ -257,7 +257,7 @@ void Cria_indicesTeste(){
     fwrite(&num,sizeof(int),1,fp);
     fclose(fp);
 
-    fp = fopen("./infos/F0002.bin","wb+");
+    fp = fopen("./infos/F0005.bin","wb+");
     num = 2;
     strcpy(tenista.nome,"Begona");
     tenista.id = 2205611;

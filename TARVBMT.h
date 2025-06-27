@@ -9,7 +9,8 @@ typedef struct tenistas{
   char nome[51], pais[51];  //nome é nome + sobrenome
   //champions.txt
   int pontuacao;
-  int anoGanhouTodosGrands; //Q(5)
+  int anoGanhouTodosGrands; //(Q5)
+  //int anoVenceuGrands[35]; //(Q2) usar? vamos decidir depois
   int TorneiosGanhos[15];
 }TT;
 //ID: [CPF(100-537)] [Nacion(10-59)] [AnoNasc(10-54)]
