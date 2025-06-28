@@ -74,7 +74,7 @@ void NOINT_imprime(NOINT *no, int t){
   for(int i=0; i<no->nchaves;i++) printf("%d ", no->vet_chaves[i]);
   printf("\n");
   for(int i=0; i<(2*t);i++) printf("%s ", no->filhos[i]);
-  printf("\n");
+  printf("\n\n");
 }
 
 void NOFO_imprime(NOFO *no, int t){
@@ -85,8 +85,8 @@ void NOFO_imprime(NOFO *no, int t){
 
   printf("\n");
   printf("%s\n%d\n", no->rotulo, no->num_info);
-  for(int i=0; i<no->num_info;i++) printf("%d ", no->vet_tenista[i]);
-  printf("\n");
+  for(int i=0; i<no->num_info;i++) printf("%d ", no->vet_tenista[i].id);
+  printf("\n\n");
 }
 
 int campo_vazio(char* campo) {
@@ -101,25 +101,30 @@ int aumenta_um(char *nome_ent, char *destino) {
     if (campo_vazio(nome_ent)) return 0;
 
     char temp[6];
-    strncpy(temp, nome_ent, 6);
-    int num = atoi(&temp[1]) + 1;
+    strncpy(temp, nome_ent, 5);
+    temp[5] = '\0';
 
+    int num = atoi(&temp[1]) + 1;
     if (num > 9999) return 0;
 
-    sprintf(destino, "%c%04d", temp[0], num);
+    if (!(strcmp(&nome_ent[strlen(nome_ent) - 4], ".bin") == 0)) sprintf(destino, "%c%04d", temp[0], num);
+    else sprintf(destino, "%c%04d.bin", temp[0], num);
     return 1;
 }
 
 int diminui_um(char *nome_ent, char *destino) {
     if (campo_vazio(nome_ent)) return 0;
-
+    
     char temp[6];
-    strncpy(temp, nome_ent, 6);
-    int num = atoi(&temp[1]) - 1;
+    strncpy(temp, nome_ent, 5);
+    temp[5] = '\0';
 
+    int num = atoi(&temp[1]) - 1;
     if (num < 0) return 0;
 
-    sprintf(destino, "%c%04d", temp[0], num);
+    if (!(strcmp(&nome_ent[strlen(nome_ent) - 4], ".bin") == 0)) sprintf(destino, "%c%04d", temp[0], num);
+    else sprintf(destino, "%c%04d.bin", temp[0], num);
+
     return 1;
 }
 
@@ -157,7 +162,7 @@ long buscar_pos_no(FILE *f_indice, char *nome_no, int t){
 
 void escreve_no(FILE *file, NOINT *no, int t){
   fwrite(no->rotulo, sizeof(char), 6, file);
-  fwrite(no->nchaves, sizeof(int), 1, file);
+  fwrite(&no->nchaves, sizeof(int), 1, file);
   fwrite(no->vet_chaves, sizeof(int), (2*t)-1, file);
   fwrite(no->filhos, sizeof(char), 6*2*t, file);
 }
@@ -174,7 +179,7 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
   //i: posicao onde o novo filho será inserido
   //pos_dividido: posicao do nó que será dividido
 
-  char no, aux[11], aux2[11];
+  char no, aux[11], aux2[11], folha1[20], folha2[20];
   int j, pont_aux; //ponteiro auxiliar, facilita o uso de fseek e ftell
   int nfolhas, ntenistas, chave_que_sobe, temp, chave_atual;
   long fimDosBlocos;
@@ -214,8 +219,7 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
     fseek(f_indice, pos_dividido, SEEK_SET); //anda ate no pra ser dividido
     fread(y->rotulo, sizeof(char), 6, f_indice); //Le o rotulo Nxxxx/Fxxxx
     fread(&y->nchaves, sizeof(int), 1, f_indice); //Le o int numero de chaves
-    if (no != 'F') fread(y->vet_chaves, sizeof(int), (2*t)-1, f_indice); //Le as 2t-1 chaves do no que vai ser dividido
-    else seek(f_indice, sizeof(int)*((2*t)-1), SEEK_CUR); 
+    fread(y->vet_chaves, sizeof(int), (2*t)-1, f_indice); //Le as 2t-1 chaves do no que vai ser dividido
     fread(y->filhos, sizeof(char), 2*t*6, f_indice); //Le os 2t filhos
 
     y->nchaves = t-1;
@@ -227,27 +231,30 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
     }
     for(j=0;j<t;j++){
       strcpy(z->filhos[j], y->filhos[j+t]);
-      memset(y->filhos[j], '\0', sizeof(char[6]));
+      memset(y->filhos[j+t], '\0', sizeof(char[6]));
     }
 
     //
     aumenta_um(y->rotulo, z->rotulo);
 
-    for (j=x->nchaves; j>=i; j--){
+    for (j=x->nchaves; j>=i; j--){  //Move todos os filhos a direita da posição i e incrementa os seus rotulos/nomes em 1
       aumenta_um(x->filhos[j], aux);
       strcpy(x->filhos[j+1], aux);
     }
-    strcpy(x->filhos[i], z->rotulo);
-    for (j=x->nchaves; j>=i; j--) x->vet_chaves[j] = x->vet_chaves[j-1];
-    x->vet_chaves[i-1] = y->vet_chaves[t-1];
-    x->nchaves++;
+    strcpy(x->filhos[i], z->rotulo); // x recebe z como filho de x na posição i que ficou vazia;
     
+    for (j=x->nchaves; j>=i; j--) x->vet_chaves[j] = x->vet_chaves[j-1]; //Move todas as chaves de x para a direita
+    x->vet_chaves[i-1] = y->vet_chaves[t-1];  // A posição que ficou vazia recebe a chave de y que vai subir 
+    x->nchaves++; 
+
+    // Atualiza o arquivo de indice
     FILE *fnovo = fopen("novo.bin", "wb");
-    fseek(f_indice, 0L, SEEK_SET);
+
     for(j=0; j<numPai; j++){ //Copiar tudo até chegar no pai do nó que está sendo dividido
       fread(buffer, 1, tamBloco, f_indice);
       fwrite(buffer, 1, tamBloco, fnovo);
     }
+    
     fseek(f_indice, tamBloco, SEEK_CUR); //Pula o no pai antigo
     escreve_no(fnovo, x, t);  //Escreve o no pai novo
 
@@ -264,7 +271,7 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
       fread(buffer, 1, tamBloco, f_indice);
       fwrite(buffer, 1, tamBloco, fnovo);
     }
-    fwrite(&nfolhas, sizeof(int), 1, fnovo);  //
+    fwrite(&nfolhas, sizeof(int), 1, fnovo);  //Escreve o numero de folhas
 
     fclose(fnovo);
     fclose(f_indice);
@@ -280,63 +287,68 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
     NOINT_libera(z, t);
 
   }
-  else { //Caso seja folha - Falta testar
-  
-    char *tmpNomeFolha1 = (char*)malloc(sizeof(char)*6);
-    char *tmpNomeFolha2 = (char*)malloc(sizeof(char)*6);
-    int folha_y;
+  else { //Caso seja folha
+
+    int folha_y, tamBloco_semFilhos = tamBloco - (sizeof(char)*6*2*t);
 
     NOFO *y = NOFO_cria(t);
     NOFO *z = NOFO_cria(t);
    
     fseek(f_indice, pos_dividido, SEEK_SET);
-    fread(y->rotulo, sizeof(char), 6, f_indice);
+    fread(y->rotulo, sizeof(char), 6, f_indice); //Le o nome da folha sendo dividida
 
-    strcpy(aux, y->rotulo);
+    strcpy(aux, "./infos/");
+    strcat(aux, y->rotulo);
     strcat(aux, ".bin");
     FILE *fy = fopen(aux, "rb");
 
-    aumenta_um(y->rotulo, z->rotulo);
+    aumenta_um(y->rotulo, z->rotulo); 
 
-    y->num_info = t-1;
-    z->num_info = t;
-    
-    fseek(fy, 0L, SEEK_END);
-    pont_aux = ftell(fy) - sizeof(int);
-    fread(y->num_info, sizeof(int), 1, fy);
-    fseek(fy, 0L, SEEK_SET);
-    for (j=0; y->num_info; j++) fread(&y->vet_tenista[j], sizeof(TT), 1, fy);
+    for (j=0; j<(2*t)-1; j++){
+      fread(&y->vet_tenista[j], sizeof(TT), 1, fy); //Le as informações da folha para poder manipular
+    }
+    fread(&y->num_info, sizeof(int), 1, fy);  //Le o numero de folhas do arquivo
 
     fclose(fy);
 
     for (j=x->nchaves; j>=i; j--){
-      aumenta_um(x->filhos[j], aux);
-      strcpy(x->filhos[j+1], aux);
+      aumenta_um(x->filhos[j], aux); 
+      strcpy(x->filhos[j+1], aux);  //Move todos os filhos de x 1 para a direita
     }
-    strcpy(x->filhos[i], z->rotulo);
-    for (j=x->nchaves; j>=i; j--) x->vet_chaves[j] = x->vet_chaves[j-1];
-    x->vet_chaves[i-1] = y->vet_tenista[t-1].id;
+    strcpy(x->filhos[i], z->rotulo); //Recebe z na posição i que ficou vazia
+    for (j=x->nchaves; j>=i; j--) x->vet_chaves[j] = x->vet_chaves[j-1]; //Move as chaves de x para a direita
+    x->vet_chaves[i-1] = y->vet_tenista[t-1].id; //Recebe a chave que subiu da folha
     x->nchaves++;
 
     for (j=0;j<t;j++){
-      z->vet_tenista[j] = y->vet_tenista[j+t-1];
-      memset(&y->vet_tenista[j], 0, sizeof(TT));
+      z->vet_tenista[j] = y->vet_tenista[j+t-1]; //Passa as t chaves de y que estão a direita para z
+      memset(&y->vet_tenista[j+t-1], 0, sizeof(TT)); //Apaga a chave de y
     }
 
-    //Atualizar o arquivo indice
-    FILE *fnovo = fopen("novo.bin", "wb");
+    y->num_info = t-1; 
+    z->num_info = t;  //Como é folha a chave que sobe pro pai também vai pro nó dividido, por isso t chaves
 
+    //Atualizar o arquivo indice
+    FILE *fnovo = fopen("novoInd.bin", "wb");
+    fseek(f_indice, 0L, SEEK_SET);
+    
     for(j=0; j<numPai; j++){ //Copiar tudo até chegar no pai do nó que está sendo dividido
       fread(buffer, 1, tamBloco, f_indice);
       fwrite(buffer, 1, tamBloco, fnovo);
     }
     fseek(f_indice, tamBloco, SEEK_CUR); //Pula o no pai antigo
     escreve_no(fnovo, x, t);  //Escreve o no pai novo
-    
+
     for(j=((fimDosBlocos-pos_pai)/tamBloco)-1; j>0; j--){ //Copia tudo até chegar no fim
-      fread(buffer, 1, tamBloco, f_indice);
-      fwrite(buffer, 1, tamBloco, fnovo);
+      fread(buffer, 1, tamBloco_semFilhos, f_indice);
+      fwrite(buffer, 1, tamBloco_semFilhos, fnovo);
+      for (int k=0; k<2*t; k++){
+        fread(buffer, sizeof(char), 6, f_indice); //E atualiza os 2t filhos; Ex: F0002 -> F0003, F0003 -> F0004....
+        aumenta_um(buffer, buffer);
+        fwrite(buffer, sizeof(char), 6, fnovo);
+      }
     }
+
     nfolhas++;
     fwrite(&nfolhas, sizeof(int), 1, fnovo);  //
 
@@ -344,7 +356,7 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
     fclose(f_indice);
 
     remove(indice);
-    rename("novo.bin", indice);
+    rename("novoInd.bin", indice);
 
     //Ajustar as folhas
 
@@ -355,26 +367,41 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
     //Insere z: F0000 - F0001 - F0002 - F0003
 
     folha_y = atoi(&y->rotulo[1]);
-    gerar_nome_folha(aux, nfolhas-2); 
-    aumenta_um(aux, aux2); //aux: F0002 e aux2: F0003 se for o caso do exemplo acima.
-    for(j = nfolhas-1; j>folha_y; j--){
-      rename(aux, aux2);
-      strcpy(aux2, aux);
-      diminui_um(aux, aux);
-    }
-    strcpy(aux, y->rotulo);
-    strcat(aux, ".bin");
-    remove(aux);
-    
-    strcpy(aux2, z->rotulo);
-    strcat(aux2, ".bin");
 
-    FILE *fy = fopen(aux, "wb"), *fz = fopen(aux2, "wb");
+    for(j = nfolhas-2; j>folha_y; j--){ //nfolhas-2: numero da ultima folha antes da divisao
+      gerar_nome_folha(aux, j);  //nome atual
+      gerar_nome_folha(aux2, j+1);  //novo nome
+
+      strcpy(folha1, "./infos/");
+      strcpy(folha2, "./infos/");
+
+      strcat(aux, ".bin");
+      strcat(aux2, ".bin");
+
+      strcat(folha1, aux);
+      strcat(folha2, aux2);
+
+      rename(folha1, folha2);
+
+      //printf("Folha1: %s - Folha2: %s\n", folha1, folha2);
+      //printf("Aux: %s - Aux2: %s\n\n", aux, aux2);
+    }
+
+    strcpy(folha1, "./infos/");
+    strcat(folha1, y->rotulo);
+    strcat(folha1, ".bin");
+
+    strcpy(folha2, "./infos/");
+    strcat(folha2, z->rotulo);
+    strcat(folha2, ".bin");
+
+    fy = fopen(folha1, "wb"); 
+    FILE *fz = fopen(folha2, "wb");
 
     for (j=0; j<t; j++){
-      fwrite(&z->vet_tenista[j], sizeof(TT), 1, fz);
+      fwrite(&z->vet_tenista[j], sizeof(TT), 1, fz); //Escreve t informações de z
       if (j == t-1) continue;
-      fwrite(&y->vet_tenista[j], sizeof(TT), 1, fy);
+      fwrite(&y->vet_tenista[j], sizeof(TT), 1, fy); //Escreve t-1 informações de y
     }
     fwrite(&z->num_info, sizeof(int), 1, fz);
     fwrite(&y->num_info, sizeof(int), 1, fy);
@@ -382,9 +409,9 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
     fclose(fz);
     fclose(fy);
 
-    NOINT_imprime(x, t);
-    NOFO_imprime(y, t);
-    NOFO_imprime(z, t);
+    //NOINT_imprime(x, t);
+    //NOFO_imprime(y, t);
+    //NOFO_imprime(z, t);
 
     NOFO_libera(y, t);
     NOFO_libera(z, t);
