@@ -327,12 +327,12 @@ void gerar_nome_folha(char *retorno, int num_folhas){
   sprintf(retorno, "F%04d", num_folhas);
 }
 
-void NOFO_libera(NOFO *no, int t){
+void NOFO_libera(NOFO *no){
   free(no->vet_tenista);
   free(no);
 }
 
-void NOINT_libera(NOINT *no, int t){
+void NOINT_libera(NOINT *no){
   free(no->vet_chaves);
   free(no->filhos);
   free(no);
@@ -433,7 +433,7 @@ long buscar_pos_no_folha(FILE *f_indice, char nome_no[6], int chave, int t){
         strcpy(filho_atual, no->filhos[i]);
 
         if (strcmp(filho_atual, nome_no) == 0){
-          NOINT_libera(no,t);
+          NOINT_libera(no);
           return ftell(f_indice) - sizeof(char)*6*(2*t-i);
         }
         else if (filho_atual[0] == 'N') fseek(f_indice, buscar_pos_no_int(filho_atual, t), SEEK_SET);
@@ -442,7 +442,7 @@ long buscar_pos_no_folha(FILE *f_indice, char nome_no[6], int chave, int t){
           break;
         }
     }
-    NOINT_libera(no,t);
+    NOINT_libera(no);
     return -1;
 }
 
@@ -472,6 +472,7 @@ long buscar_pos_no(FILE *f_indice, char nome_no[6], int t){
 
   return -1; //O parametro passado está errado, esperava: "Nxxxx\0" ou "Fxxxx\0"
 }
+
 
 void escreve_no(FILE *file, NOINT *no, int t){
   fwrite(no->rotulo, sizeof(char), 6, file);
@@ -608,11 +609,11 @@ void ajusta_folhas(FILE *f_indice, int nfolhas, int ponto_de_parada, int t){
       ff = fopen(folha1, "rb");
       if (!ff){
         printf("ajusta_folhas: Erro ao abrir a folha - Leitura\n");
-        NOFO_libera(no,t);
+        NOFO_libera(no);
         return;
       }
       if (le_folha(ff, &no) != 0){
-        NOFO_libera(no,t);
+        NOFO_libera(no);
         return;
       }
 
@@ -622,7 +623,7 @@ void ajusta_folhas(FILE *f_indice, int nfolhas, int ponto_de_parada, int t){
       ff = fopen(folha2, "wb");
       if (!ff){
         printf("ajusta_folhas: Erro ao abrir a folha - Escrita\n");
-        NOFO_libera(no,t);
+        NOFO_libera(no);
         return;
       }
       escreve_folha(ff, no);
@@ -632,150 +633,151 @@ void ajusta_folhas(FILE *f_indice, int nfolhas, int ponto_de_parada, int t){
       //printf("Folha1: %s - Folha2: %s\n", folha1, folha2);
       //printf("Aux: %s - Aux2: %s\n\n", aux, aux2);
     }
-    NOFO_libera(no,t);
+    NOFO_libera(no);
 }
 
 void divisao_MS(char *indice, int i, long pos_pai, long pos_dividido, int t){
 
-    //pos_pai: posicao onde o pai se encontra no arquivo indice
-    //i: posicao onde o novo filho será inserido
-    //pos_dividido: posicao do nó que será dividido
+  //pos_pai: posicao onde o pai se encontra no arquivo indice
+  //i: posicao onde o novo filho será inserido
+  //pos_dividido: posicao do nó que será dividido
 
-    FILE *f_indice = fopen(indice, "rb+");
-    if (!f_indice){
-        perror("divisao_MS:Falha em abrir o arquivo indice no modo de leitura.\n");
-        return;
-    }
+  FILE *f_indice = fopen(indice, "rb+");
+  if (!f_indice){
+      perror("divisao_MS:Falha em abrir o arquivo indice no modo de leitura.\n");
+      return;
+  }
 
-    char no, folha1[40], folha2[40];
-    int nfolhas, folha_y, j;
-    long pont_aux;
-    long tamBloco = (sizeof(char) * 6) +          // id do no
-                    sizeof(int) +             // numchaves
-                    (sizeof(int) * (2 * t - 1)) + // chaves
-                    (sizeof(char) * 6 * (2 * t)); // filhos
+  char no, folha1[40], folha2[40];
+  int nfolhas, folha_y, j;
+  long pont_aux;
+  long tamBloco = (sizeof(char) * 6) +          // id do no
+                  sizeof(int) +             // numchaves
+                  (sizeof(int) * (2 * t - 1)) + // chaves
+                  (sizeof(char) * 6 * (2 * t)); // filhos
 
-    fseek(f_indice, pos_dividido, SEEK_SET); //anda ate o no que sera dividido
-    if (fread(&no, sizeof(char), 1, f_indice) != 1) {
-      printf("Erro ao ler tipo de nó\n");
-      fclose(f_indice);
+  fseek(f_indice, pos_dividido, SEEK_SET); //anda ate o no que sera dividido
+  if (fread(&no, sizeof(char), 1, f_indice) != 1) {
+    printf("Erro ao ler tipo de nó\n");
+    fclose(f_indice);
+  return;
+  }
+
+  //printf("->%c<-\n", no);
+  NOINT *x;
+  x = NOINT_cria(t);
+  if (!x){
+    printf("Erro de alocacao!\n");
     return;
-    }
+  }
+  //Preenche x com as informaçoes
+  fseek(f_indice, pos_pai, SEEK_SET); //anda ate no pai
+  fread(x->rotulo, sizeof(char), 6, f_indice); //Le o rotulo Nxxxx
+  fread(&x->nchaves, sizeof(int), 1, f_indice); //Le o int numero de chaves
+  fread(x->vet_chaves, sizeof(int), (2*t)-1, f_indice); //Le as 2t-1 chaves do no que vai ser dividido
+  fread(x->filhos, sizeof(char), 2*t*6, f_indice); //Le os 2t filhos
 
-    //printf("->%c<-\n", no);
-    NOINT *x;
-    x = NOINT_cria(t);
-    if (!x){
+  if (no == 'N'){ //Caso o dividido seja no interno
+    printf("Caso no interno\n");
+    NOINT *y, *z;
+
+    y = NOINT_cria(t);
+    z = NOINT_cria(t);
+    if (!y || !z){
       printf("Erro de alocacao!\n");
       return;
     }
-    //Preenche x com as informaçoes
-    fseek(f_indice, pos_pai, SEEK_SET); //anda ate no pai
-    fread(x->rotulo, sizeof(char), 6, f_indice); //Le o rotulo Nxxxx
-    fread(&x->nchaves, sizeof(int), 1, f_indice); //Le o int numero de chaves
-    fread(x->vet_chaves, sizeof(int), (2*t)-1, f_indice); //Le as 2t-1 chaves do no que vai ser dividido
-    fread(x->filhos, sizeof(char), 2*t*6, f_indice); //Le os 2t filhos
 
-    if (no == 'N'){ //Caso o dividido seja no interno
-        printf("Caso no interno\n");
-        NOINT *y, *z;
+    div_cria_nosInt(f_indice, pos_dividido, tamBloco, i, t, &x, &y, &z);
 
-        y = NOINT_cria(t);
-        z = NOINT_cria(t);
-        if (!y || !z){
-          printf("Erro de alocacao!\n");
-          return;
-        }
+    //Atualizacao do arquivo indice
+    fseek(f_indice, pos_pai, SEEK_SET);
+    escreve_no(f_indice, x, t);
 
-        div_cria_nosInt(f_indice, pos_dividido, tamBloco, i, t, &x, &y, &z);
+    fseek(f_indice, pos_dividido, SEEK_SET);
+    escreve_no(f_indice, y, t);
 
-        //Atualizacao do arquivo indice
-        fseek(f_indice, pos_pai, SEEK_SET);
-        escreve_no(f_indice, x, t);
+    fseek(f_indice, 0L, SEEK_END);
+    pont_aux = ftell(f_indice) - sizeof(int);
+    fseek(f_indice, pont_aux, SEEK_SET);
+    fread(&nfolhas, sizeof(int), 1, f_indice);
 
-        fseek(f_indice, pos_dividido, SEEK_SET);
-        escreve_no(f_indice, y, t);
+    fseek(f_indice, pont_aux, SEEK_SET);
 
-        fseek(f_indice, 0L, SEEK_END);
-        pont_aux = ftell(f_indice) - sizeof(int);
-        fseek(f_indice, pont_aux, SEEK_SET);
-        fread(&nfolhas, sizeof(int), 1, f_indice);
+    escreve_no(f_indice, z, t);
+    fwrite(&nfolhas, sizeof(int), 1, f_indice);
 
-        fseek(f_indice, pont_aux, SEEK_SET);
+    fclose(f_indice);
 
-        escreve_no(f_indice, z, t);
-        fwrite(&nfolhas, sizeof(int), 1, f_indice);
+    NOINT_libera(y);
+    NOINT_libera(z);
+  }
+  else if (no == 'F'){ //Caso o dividido seja folha
+    printf("Caso Folha\n");
+    
+    NOFO *y, *z;
 
-        fclose(f_indice);
+    y = NOFO_cria(t);
+    z = NOFO_cria(t);
 
-        NOINT_libera(y,t);
-        NOINT_libera(z,t);
-    }
-    else if (no == 'F'){ //Caso o dividido seja folha
-      printf("Caso Folha\n");
-      
-      NOFO *y, *z;
-
-      y = NOFO_cria(t);
-      z = NOFO_cria(t);
-
-      if (!y || !z){
-        printf("Erro de alocacao!\n");
-        return;
-      }
-
-      div_cria_folhas(f_indice, pos_dividido, i, t, &x, &y, &z);
-
-      fseek(f_indice, 0L, SEEK_END);
-      pont_aux = ftell(f_indice) - sizeof(int);
-      fseek(f_indice, pont_aux, SEEK_SET);
-      fread(&nfolhas, sizeof(int), 1, f_indice);
-      nfolhas++;
-      fseek(f_indice, pont_aux, SEEK_SET);
-      fwrite(&nfolhas, sizeof(int), 1, f_indice);
-
-      folha_y = atoi(&y->rotulo[1]);
-
-      //printf("Entrando no ajusta folhas\n");
-      ajusta_folhas(f_indice, nfolhas, folha_y, t);
-      //printf("Saindo do ajusta folhas\n");
-
-      fseek(f_indice, pos_pai, SEEK_SET);
-      escreve_no(f_indice, x, t);
-
-      //Ajustar as folhas
-
-      //Como vamos adicionar uma folha na nossa arvore
-      //Vamos aumentar em 1 o valor de cada folha que esta depois da folha inserida
-      //Ex: F0000 - F0001 - F0002     (Divide F0000, cria irmão z com nome F0001)
-      //Move 1 pra direita: F0000 - F0002 - F0003
-      //Insere z: F0000 - F0001 - F0002 - F0003
-
-      sprintf(folha1, "./infos/%s.bin", y->rotulo);
-      sprintf(folha2, "./infos/%s.bin", z->rotulo);
-
-      //printf("Folha_y: %s, Folha_z: %s\n", folha1, folha2);
-
-      FILE *fy = fopen(folha1, "wb"); 
-      FILE *fz = fopen(folha2, "wb");
-
-      for (j=0; j<t-1; j++) fwrite(&y->vet_tenista[j], sizeof(TT), 1, fy); //Escreve t-1 informações de y
-      for (j=0; j<t; j++) fwrite(&z->vet_tenista[j], sizeof(TT), 1, fz); //Escreve t informações de z
-          
-      fwrite(&z->num_info, sizeof(int), 1, fz);
-      fwrite(&y->num_info, sizeof(int), 1, fy);
-
-      fclose(fz);
-      fclose(fy);
-
-      fclose(f_indice);
-
-      NOFO_libera(y,t);
-      NOFO_libera(z,t);
+    if (!y || !z){
+      printf("Erro de alocacao!\n");
+      return;
     }
 
-    NOINT_libera(x,t);
+    div_cria_folhas(f_indice, pos_dividido, i, t, &x, &y, &z);
+
+    fseek(f_indice, 0L, SEEK_END);
+    pont_aux = ftell(f_indice) - sizeof(int);
+    fseek(f_indice, pont_aux, SEEK_SET);
+    fread(&nfolhas, sizeof(int), 1, f_indice);
+    nfolhas++;
+    fseek(f_indice, pont_aux, SEEK_SET);
+    fwrite(&nfolhas, sizeof(int), 1, f_indice);
+
+    folha_y = atoi(&y->rotulo[1]);
+
+    //printf("Entrando no ajusta folhas\n");
+    ajusta_folhas(f_indice, nfolhas, folha_y, t);
+    //printf("Saindo do ajusta folhas\n");
+
+    fseek(f_indice, pos_pai, SEEK_SET);
+    escreve_no(f_indice, x, t);
+
+    //Ajustar as folhas
+
+    //Como vamos adicionar uma folha na nossa arvore
+    //Vamos aumentar em 1 o valor de cada folha que esta depois da folha inserida
+    //Ex: F0000 - F0001 - F0002     (Divide F0000, cria irmão z com nome F0001)
+    //Move 1 pra direita: F0000 - F0002 - F0003
+    //Insere z: F0000 - F0001 - F0002 - F0003
+
+    sprintf(folha1, "./infos/%s.bin", y->rotulo);
+    sprintf(folha2, "./infos/%s.bin", z->rotulo);
+
+    //printf("Folha_y: %s, Folha_z: %s\n", folha1, folha2);
+
+    FILE *fy = fopen(folha1, "wb"); 
+    FILE *fz = fopen(folha2, "wb");
+
+    for (j=0; j<t-1; j++) fwrite(&y->vet_tenista[j], sizeof(TT), 1, fy); //Escreve t-1 informações de y
+    for (j=0; j<t; j++) fwrite(&z->vet_tenista[j], sizeof(TT), 1, fz); //Escreve t informações de z
+        
+    fwrite(&z->num_info, sizeof(int), 1, fz);
+    fwrite(&y->num_info, sizeof(int), 1, fy);
+
+    fclose(fz);
+    fclose(fy);
+
+    fclose(f_indice);
+
+    NOFO_libera(y);
+    NOFO_libera(z);
+  }
+
+  NOINT_libera(x);
 }
+
 
 /*
 int main(void){
@@ -850,7 +852,7 @@ void insere_na_folha(const char *arq_indice, const char *arq_folha, TT novo_atle
         long offset_filhos = (sizeof(char) * 6) + sizeof(int) + (sizeof(int) * (2 * t - 1));
         long pos_ponteiro_filho = pos_pai + offset_filhos + (i * sizeof(char) * 6);
         
-        divisao_MS((char *)arq_indice, i, pos_pai, pos_ponteiro_filho, t);
+        divisao_MS((char *)arq_indice, (i+1), pos_pai, pos_ponteiro_filho, t);
         
         // Apos a divisao, a arvore mudou. Reinicia o processo de insercaoo
         printf("Divisao completa. Reinserindo atleta ID %d.\n", novo_atleta.id);
@@ -896,6 +898,7 @@ void insere_na_folha(const char *arq_indice, const char *arq_folha, TT novo_atle
 
 // A ideia eh gerar um pai para antiga raiz e dps chamar a divisao_MS
 void divisao_raiz(const char *arq_indice, long tam_bloco, int t){ //adicionado parametro int t
+  //A divisao da raiz nao funciona, no ultimo testa ela quebrou a arvore e manteve somente um terco dela
     FILE *fp_original = fopen(arq_indice, "rb+");
     if(!fp_original){
         printf("nao foi possivel abrir o arquivo original(divisao_raiz)\n");
@@ -976,7 +979,7 @@ void divisao_raiz(const char *arq_indice, long tam_bloco, int t){ //adicionado p
 
    // Antiga raiz eh folha e seu pai esta na posicao 0
    
-   divisao_MS((char *)arq_indice, 0, 0, pos_copia_raiz, t);
+   divisao_MS((char *)arq_indice, 1, 0, pos_copia_raiz, t); // i=1 significa que desce no filho mais a esquerda!
 }
 
 void insere(const char *arq_indice, TT novo_atleta, int t){ //adicionado parametro int t
@@ -1045,7 +1048,9 @@ void insere(const char *arq_indice, TT novo_atleta, int t){ //adicionado paramet
         
         if(nchaves_filho == (2 * t -1 )){
             printf("No interno cheio, chamando divisao_MS");
-            divisao_MS((char *)arq_indice, i, ptr_atual, ptr_filho, t); //PROGRAMA ESTÁ PARANDO AQUI
+            fclose(fp_indice);
+            divisao_MS((char *)arq_indice, (i+1), ptr_atual, ptr_filho, t); //PROGRAMA ESTÁ PARANDO AQUI
+            fp_indice = fopen(arq_indice, "rb");
             printf("CHEGOU\n");
             ptr_atual = 0L;
             continue;
