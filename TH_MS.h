@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/*
-typedef struct linhaHashPontuacaoPorAno{ //tipo 0
-  int id, pontuacao;
-  struct linhaHashPontuacaoPorAno *prox;
-}THpts;
+
+typedef struct linhaHashRankingPorAno{ //tipo 0
+  int id, prox, status, pontuacao; //pontuacao usada só para ordem na hash, nao como informacao buscável!!!!
+}THTpts;/*
 typedef struct linhaHashVencedoresDeTorneiosComAno{ //tipo 1
   int id, ano, qtdNoAno;
   struct linhaHashVencedoresDeTorneiosComAno *prox;
@@ -14,15 +13,29 @@ typedef struct linhaHashTenistas{
   int id, prox, status;
 }THT; //Thid
 typedef struct listaEncadeadatht{
-  THT elemHash;
+  int id;
   struct listaEncadeadatht *prox;
-}TLSETHT;
+}TLSEid;
+
+
+int THP_hash(int ano);
+int THNOM_hash(char nome[51]);
+int THV_hash(int indiceTorneios);
+int THNAC_hash(int id);
+int THVT_hash(int indiceTorneios);
 
 void TH_inicializa(char *tabHash, char *dados, int n);
-THT* TH_busca(char *tabHash, char *dados, int n, int mat);
-float TH_retira(char *tabHash, char *arq, int n, int mat);
-void TH_insere(char *tabHash, char *arq, int n, int mat, float cr);
-void TH_imprime (char *nome_hash, char *nome_dados, int m);
+void InicializaHashs();
+
+//Nao sao usados, mas quem sabe
+THTpts* THP_aloca(int id, int pontuacao);
+THT* THNOM_aloca(int id);
+THT* THV_aloca(int id, int ano, int qtd);
+THT* THNAC_aloca(int id);
+THT* THVT_aloca(int id);
+
+TLSEid *TLSEid_insere_inic(TLSEid *l, int id);
+TLSEid *TLSEid_insere_fim(TLSEid *l, int id);
 
 
 

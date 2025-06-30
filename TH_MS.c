@@ -1,3 +1,4 @@
+#include "TARVBMT.h"
 #include "TH_MS.h"
 #define TAM0 35
 #define TAM1 26  
@@ -28,7 +29,7 @@ ID: [CPF(100-537)] [Nacion(10-59)] [AnoNasc(10-54)] [Titulos(15)]
 
 //HASHS
 int THP_hash(int ano){
-  return ano-1960;
+  return ano-1990;
 }
 int THNOM_hash(char nome[51]){
   if(strncmp(nome,"a",1)==0 || strncmp(nome,"A",1)==0) return 0;
@@ -64,8 +65,10 @@ int THV_hash(int indiceTorneios){
   else if(indiceTorneios==5) return 2;
   return 3;
 }
-int THNAC_hash(int indicePais){
-  return indicePais-10;
+int THNAC_hash(int id){
+  int hash = id%10000;
+  hash /= 100;
+  return hash-10;
 }
 int THVT_hash(int indiceTorneios){ //Wow
   return indiceTorneios;
@@ -83,17 +86,17 @@ void TH_inicializa(char *tabHash, char *dados, int n){
 }
 void InicializaHashs(){
   TH_inicializa("./hashs/THP.bin","./hashs/THP_dados.bin",35);
-  TH_inicializa("./hashs/THNOM.bin","./hashs/THNOM_dados.bin",35);
-  TH_inicializa("./hashs/THV.bin","./hashs/THV_dados.bin",35);
-  TH_inicializa("./hashs/THNAC.bin","./hashs/THNAC_dados.bin",35);
-  TH_inicializa("./hashs/THVT.bin","./hashs/THVT_dados.bin",35);
+  TH_inicializa("./hashs/THNOM.bin","./hashs/THNOM_dados.bin",26);
+  TH_inicializa("./hashs/THV.bin","./hashs/THV_dados.bin",4);
+  TH_inicializa("./hashs/THNAC.bin","./hashs/THNAC_dados.bin",50);
+  TH_inicializa("./hashs/THVT.bin","./hashs/THVT_dados.bin",15);
 }
 
 
-THT* THP_aloca(int id){ //THT* THP_aloca(int id, int pontuacao)
-  THT *novo = (THT*) malloc (sizeof (THT));
+THTpts* THP_aloca(int id, int pontuacao){
+  THTpts *novo = (THTpts*) malloc (sizeof (THTpts));
   novo->id = id;
-  //novo->pontuacao = pontuacao;
+  novo->pontuacao = pontuacao;
   novo->prox = NULL;
   return novo;
 }
@@ -125,21 +128,21 @@ THT* THVT_aloca(int id){
   return novo;
 }
 
-TLSETHT *TLSETHT_insere_inic(TLSETHT *l, THT elem){
-  TLSETHT *novo = (TLSETHT *) malloc(sizeof(TLSETHT));
+TLSEid *TLSEid_insere_inic(TLSEid *l, int id){
+  TLSEid *novo = (TLSEid *) malloc(sizeof(TLSEid));
   novo->prox = l;
-  novo->elemHash = elem;
+  novo->id = id;
   return novo;
 }
 
-TLSETHT *TLSETHT_insere_fim(TLSETHT *l, THT elem){
-  if(!l) return TLSETHT_insere_inic(NULL,elem);
-  l->prox = TLSE_insere_fim(l->prox,elem);
+TLSEid *TLSEid_insere_fim(TLSEid *l, int id){
+  if(!l) return TLSEid_insere_inic(NULL,id);
+  l->prox = TLSEid_insere_fim(l->prox,id);
   return l;
 }
 
     //LEMBRAR DE LIBERAR!!!!
-TLSETHT *THP_busca_primeiros25DoAno(int ano){ //Q4 //NAO TESTADO!
+TLSEid *THP_busca_primeiros_ateh_N_Do_Ano(int ano, int qtd_n){ //Q4 e Q3 //Funcionando!
   FILE *fp = fopen("./hashs/THP.bin","rb");
   if(!fp)exit(1);
   int pos, h = THP_hash(ano);
@@ -150,17 +153,71 @@ TLSETHT *THP_busca_primeiros25DoAno(int ano){ //Q4 //NAO TESTADO!
   fp = fopen("./hashs/THP_dados.bin","rb");
   if(!fp) exit(1);
   fseek(fp, pos, SEEK_SET);
-  THT aux;
-  fread(&aux, sizeof(THT), 1, fp);
+  THTpts aux;
+  fread(&aux, sizeof(THTpts), 1, fp);
 
   int i = 0; //quase um for
-  TLSETHT *lista = NULL; //inicializando TLSETHT
-  while(i < 25){
+  TLSEid *lista = NULL; //inicializando TLSEid
+  while(i < qtd_n){ //antes era 25 só para Q4
     if(aux.status){
-      THT *resp = THP_aloca(aux.id);
-      resp->prox = aux.prox;
-      lista = TLSETHT_insere_fim(lista,aux);
+      lista = TLSEid_insere_fim(lista,aux.id);
+      i++;
     }
+    if(aux.prox == -1){
+      fclose(fp);
+      return lista;
+    }
+    fseek(fp, aux.prox, SEEK_SET);
+    fread(&aux, sizeof(THTpts), 1, fp);
+  }
+  fclose(fp);
+  return lista;
+}
+//ja retorna o cara usando TARVBMT_busca
+TT THNOM_busca(char nome[51],int t){ //Ou ponteiro para poder retornar NULL
+  FILE *fp = fopen("./hashs/THNOM.bin","rb");
+  if(!fp)exit(1);
+  int pos, h = THNOM_hash(nome);
+  fseek(fp, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fp);
+  fclose(fp);
+  if(pos == -1)return TT_cria_vazio();
+  fp = fopen("./hashs/THNOM_dados.bin","rb");
+  if(!fp) exit(1);
+  fseek(fp, pos, SEEK_SET);
+  THT aux;
+  TT tenista;
+  fread(&aux, sizeof(THT), 1, fp);
+  while(1){
+    tenista = TARVBMT_busca(aux.id,t);
+    if((strcmp(tenista.nome,nome)==0) && (aux.status)){
+      fclose(fp);
+      return tenista;
+    }
+    if(aux.prox == -1){
+      fclose(fp);
+      return TT_cria_vazio();
+    }
+    fseek(fp, aux.prox, SEEK_SET);
+    fread(&aux, sizeof(THT), 1, fp);
+  }
+}
+TLSEid *THV_busca_lista_torneio(int indiceTorneio){
+  FILE *fp = fopen("./hashs/THV.bin","rb");
+  if(!fp)exit(1);
+  int pos, h = THV_hash(indiceTorneio);
+  fseek(fp, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fp);
+  fclose(fp);
+  if(pos == -1)return NULL;
+  fp = fopen("./hashs/THV_dados.bin","rb");
+  if(!fp) exit(1);
+  fseek(fp, pos, SEEK_SET);
+  THT aux;
+  TLSEid *lista = NULL;
+  fread(&aux, sizeof(THT), 1, fp);
+  while(1){
+    if(aux.status)lista = TLSEid_insere_fim(lista, aux.id);
     if(aux.prox == -1){
       fclose(fp);
       return lista;
@@ -168,66 +225,337 @@ TLSETHT *THP_busca_primeiros25DoAno(int ano){ //Q4 //NAO TESTADO!
     fseek(fp, aux.prox, SEEK_SET);
     fread(&aux, sizeof(THT), 1, fp);
   }
+}
+//Printar o arquivo de paises e pedir para o usuario escolher por numero
+TLSEid *THNAC_busca(int indice_paises_no_arq){
+  FILE *fp = fopen("./hashs/THNAC.bin","rb");
+  if(!fp)exit(1);
+  int pos, h = indice_paises_no_arq;
+  fseek(fp, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fp);
   fclose(fp);
-  return lista;
+  if(pos == -1)return NULL;
+  fp = fopen("./hashs/THNAC_dados.bin","rb");
+  if(!fp) exit(1);
+  fseek(fp, pos, SEEK_SET);
+  THT aux;
+  TLSEid *lista = NULL;
+  fread(&aux, sizeof(THT), 1, fp);
+  while(1){
+    if(aux.status)lista = TLSEid_insere_fim(lista, aux.id);
+    if(aux.prox == -1){
+      fclose(fp);
+      return lista;
+    }
+    fseek(fp, aux.prox, SEEK_SET);
+    fread(&aux, sizeof(THT), 1, fp);
+  }
+}
+TLSEid *THVT_busca(int indiceTorneios){
+  FILE *fp = fopen("./hashs/THVT.bin","rb");
+  if(!fp)exit(1);
+  int pos, h = THVT_hash(indiceTorneios);
+  fseek(fp, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fp);
+  fclose(fp);
+  if(pos == -1)return NULL;
+  fp = fopen("./hashs/THVT_dados.bin","rb");
+  if(!fp) exit(1);
+  fseek(fp, pos, SEEK_SET);
+  THT aux;
+  TLSEid *lista = NULL;
+  fread(&aux, sizeof(THT), 1, fp);
+  while(1){
+    if(aux.status)lista = TLSEid_insere_fim(lista, aux.id);
+    if(aux.prox == -1){
+      fclose(fp);
+      return lista;
+    }
+    fseek(fp, aux.prox, SEEK_SET);
+    fread(&aux, sizeof(THT), 1, fp);
+  }
 }
 
 
 
 
-float TH_retira(char *tabHash, char *arq, int n, int mat){
-  FILE *fp = fopen(tabHash,"rb");
+void THP_retira(int id){
+  FILE *fp;
+  int pos;
+  for(int i=0; i<35; i++){
+    fp = fopen("./hashs/THP.bin","rb+");
+    if(!fp) exit(1);
+    fseek(fp, i*sizeof(int), SEEK_SET);
+    fread(&pos, sizeof(int), 1, fp);
+    fclose(fp);
+    if(pos == -1)continue;
+    fp = fopen("./hashs/THP_dados.bin","rb+");
+    if(!fp)exit(1);
+    THTpts aux;
+    while(1){
+      fseek(fp, pos, SEEK_SET);
+      fread(&aux, sizeof(THTpts), 1, fp);
+      if((aux.id == id) && (aux.status)){ //achou
+        aux.status = 0;
+        fseek(fp, pos, SEEK_SET);
+        fwrite(&aux, sizeof(THTpts), 1, fp);
+        fclose(fp);
+        break;
+      }
+      if(aux.prox == -1){ //nao achou
+        fclose(fp);
+        break;
+      }
+      pos = aux.prox;
+    }
+  }
+}
+void THNOM_retira(int id, char nome[51]){
+  FILE *fp = fopen("./hashs/THNOM.bin","rb+");
   if(!fp) exit(1);
-  int pos, h = TH_hash(mat,n);
+  int pos, h = THNOM_hash(nome);
   fseek(fp, h*sizeof(int), SEEK_SET);
   fread(&pos, sizeof(int), 1, fp);
   fclose(fp);
-  if(pos == -1)return -1;
-  float cr = -1;
-  fp = fopen(arq,"rb+");
+  if(pos == -1) return;
+  fp = fopen("./hashs/THNOM_dados.bin","rb+");
   if(!fp)exit(1);
-  TA aux;
+  THT aux;
   while(1){
     fseek(fp, pos, SEEK_SET);
-    fread(&aux, sizeof(TA), 1, fp);
-    if((aux.mat == mat) && (aux.status)){
-      cr = aux.cr;
+    fread(&aux, sizeof(THT), 1, fp);
+    if((aux.id == id) && (aux.status)){
       aux.status = 0;
       fseek(fp, pos, SEEK_SET);
-      fwrite(&aux, sizeof(TA), 1, fp);
+      fwrite(&aux, sizeof(THT), 1, fp);
       fclose(fp);
-      return cr;
+      return;
     }
     if(aux.prox == -1){
       fclose(fp);
-      return cr;
+      return;
     }
     pos = aux.prox;
   }
 }
+void THV_retira(int id){
+  FILE *fp;
+  int pos;
+  for(int i=0; i<4; i++){
+    fp = fopen("./hashs/THV.bin","rb+");
+    if(!fp) exit(1);
+    fseek(fp, i*sizeof(int), SEEK_SET);
+    fread(&pos, sizeof(int), 1, fp);
+    fclose(fp);
+    if(pos == -1)continue;
+    fp = fopen("./hashs/THV_dados.bin","rb+");
+    if(!fp)exit(1);
+    THT aux;
+    while(1){
+      fseek(fp, pos, SEEK_SET);
+      fread(&aux, sizeof(THT), 1, fp);
+      if((aux.id == id) && (aux.status)){
+        aux.status = 0;
+        fseek(fp, pos, SEEK_SET);
+        fwrite(&aux, sizeof(THT), 1, fp);
+        fclose(fp);
+        break;
+      }
+      if(aux.prox == -1){
+        fclose(fp);
+        break;
+      }
+      pos = aux.prox;
+    }
+  }
+}
+void THNAC_retira(int id){
+  FILE *fp = fopen("./hashs/THNAC.bin","rb+");
+  if(!fp) exit(1);
+  int pos, h = THNAC_hash(id);
+  fseek(fp, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fp);
+  fclose(fp);
+  if(pos == -1) return;
+  fp = fopen("./hashs/THNAC_dados.bin","rb+");
+  if(!fp)exit(1);
+  THT aux;
+  while(1){
+    fseek(fp, pos, SEEK_SET);
+    fread(&aux, sizeof(THT), 1, fp);
+    if((aux.id == id) && (aux.status)){
+      aux.status = 0;
+      fseek(fp, pos, SEEK_SET);
+      fwrite(&aux, sizeof(THT), 1, fp);
+      fclose(fp);
+      return;
+    }
+    if(aux.prox == -1){
+      fclose(fp);
+      return;
+    }
+    pos = aux.prox;
+  }
+}
+void THVT_retira(int id){
+  FILE *fp;
+  int pos;
+  for(int i=0; i<15; i++){
+    fp = fopen("./hashs/THVT.bin","rb+");
+    if(!fp) exit(1);
+    fseek(fp, i*sizeof(int), SEEK_SET);
+    fread(&pos, sizeof(int), 1, fp);
+    fclose(fp);
+    if(pos == -1)continue;
+    fp = fopen("./hashs/THVT_dados.bin","rb+");
+    if(!fp)exit(1);
+    THT aux;
+    while(1){
+      fseek(fp, pos, SEEK_SET);
+      fread(&aux, sizeof(THT), 1, fp);
+      if((aux.id == id) && (aux.status)){
+        aux.status = 0;
+        fseek(fp, pos, SEEK_SET);
+        fwrite(&aux, sizeof(THT), 1, fp);
+        fclose(fp);
+        break;
+      }
+      if(aux.prox == -1){
+        fclose(fp);
+        break;
+      }
+      pos = aux.prox;
+    }
+  }
+}
 
-void TH_insere(char *tabHash, char *arq, int n, int mat, float cr){
-  FILE *fph = fopen(tabHash, "rb+");
+
+//Nao funcionando 100%, concertar na otimizacao (Nao é necessario para o programa)
+/*
+void THP_limpar(int ano){ //retira quem está inválido
+  FILE *fph = fopen("./hashs/THP.bin", "rb+");
   if(!fph) exit(1);
-  int pos, h = TH_hash(mat, n);
+  int pos, h = THP_hash(ano);
   fseek(fph, h*sizeof(int), SEEK_SET);
   fread(&pos, sizeof(int), 1, fph);
-  int ant, prim_pos_livre;
-  ant = prim_pos_livre = -1;
-  FILE *fp = fopen(arq,"rb+");
+  int ant = -1, prox, pos_curr;
+  FILE *fp = fopen("./hashs/THP_dados.bin","rb+");
   if(!fp){
     fclose(fph);
     exit(1);
   }
-  TA aux;
+  THTpts aux;
+  while(pos != -1){
+    fseek(fp,pos,SEEK_SET);
+    fread(&aux,sizeof(THTpts),1,fp);
+    pos_curr = pos;
+    if(!aux.status){
+      prox = aux.prox;
+      if(ant == -1){
+        fseek(fph,h*sizeof(int),SEEK_SET);
+        fwrite(&aux.prox,sizeof(int),1,fph);
+      }
+      while(prox != -1){
+        fseek(fp,prox,SEEK_SET); //proximo
+        fread(&aux,sizeof(THTpts),1,fp);
+        fseek(fp,pos,SEEK_SET); //atual
+        fwrite(&aux,sizeof(THTpts),1,fp);
+        pos = prox;
+        prox = aux.prox;
+      }
+
+      fseek(fp,pos_curr,SEEK_SET);
+      fread(&aux,sizeof(THTpts),1,fp);
+    }
+    ant = pos_curr;
+    pos = aux.prox;
+  }
+  fclose(fph);
+  fclose(fp);
+}*/
+
+
+void THP_insere(int id, int pontuacao, int ano){ //funcionando
+  FILE *fph = fopen("./hashs/THP.bin", "rb+");
+  if(!fph) exit(1);
+  int pos, h = THP_hash(ano);
+  fseek(fph, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fph);
+  int ant = -1;
+  FILE *fp = fopen("./hashs/THP_dados.bin","rb+");
+  if(!fp){
+    fclose(fph);
+    exit(1);
+  }
+  THTpts aux;
+  while(pos != -1){ //vendo se ele está lá
+    fseek(fp, pos, SEEK_SET);
+    fread(&aux, sizeof(THTpts), 1, fp);
+    if(aux.id == id && aux.status){ //se está lá, remove e o insere de novo para entrar em nova ordem de pontuacao
+      fclose(fph);
+      fclose(fp);
+      THP_retira(id);
+      pontuacao += aux.pontuacao; //soma a pontuacao à antiga
+      THP_insere(id,pontuacao,ano);
+      return;
+    }
+    pos = aux.prox;
+  }
+  //Não está na hash (ou está inválido)
+  fseek(fph, h*sizeof(int), SEEK_SET); //redefinindo pos
+  fread(&pos, sizeof(int), 1, fph);
+
+  fseek(fp, pos, SEEK_SET);
+  fread(&aux, sizeof(THTpts), 1, fp);
+  while(aux.pontuacao >= pontuacao){
+    ant = pos;
+    pos = aux.prox;
+    if(pos == -1) break;
+    fseek(fp, pos, SEEK_SET);
+    fread(&aux, sizeof(THTpts), 1, fp);
+  }
+  aux.prox = pos;
+  aux.id = id;
+  aux.pontuacao = pontuacao;
+  aux.status = 1;
+  fseek(fp, 0L, SEEK_END);
+  pos = ftell(fp);
+  fwrite(&aux, sizeof(THTpts), 1, fp);
+  if(ant != -1){
+    fseek(fp, ant, SEEK_SET);
+    fread(&aux, sizeof(THTpts), 1, fp);
+    aux.prox = pos;
+    fseek(fp, ant, SEEK_SET);
+    fwrite(&aux, sizeof(THTpts), 1, fp);
+  }
+  else{
+    fseek(fph, h*sizeof(int), SEEK_SET);
+    fwrite(&pos, sizeof(int), 1, fph);
+  }
+  fclose(fp);
+  fclose(fph);
+}
+void THNOM_insere(int id, char nome[51]){
+  FILE *fph = fopen("./hashs/THNOM.bin", "rb+");
+  if(!fph) exit(1);
+  int pos, h = THNOM_hash(nome);
+  fseek(fph, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fph);
+  int ant, prim_pos_livre;
+  ant = prim_pos_livre = -1;
+  FILE *fp = fopen("./hash/THNOM_dados.bin","rb+");
+  if(!fp){
+    fclose(fph);
+    exit(1);
+  }
+  THT aux;
   while(pos != -1){
     fseek(fp, pos, SEEK_SET);
-    fread(&aux, sizeof(TA), 1, fp);
-    if(aux.mat == mat){
-      aux.cr = cr;
+    fread(&aux, sizeof(THT), 1, fp);
+    if(aux.id == id){
       aux.status = 1;
       fseek(fp, pos, SEEK_SET);
-      fwrite(&aux, sizeof(TA), 1, fp);
+      fwrite(&aux, sizeof(THT), 1, fp);
       fclose(fp);
       fclose(fph);
       return;
@@ -237,19 +565,18 @@ void TH_insere(char *tabHash, char *arq, int n, int mat, float cr){
     pos = aux.prox;
   }
   if(prim_pos_livre == -1){
-    aux.mat = mat;
-    aux.cr = cr;
+    aux.id = id;
     aux.prox = -1;
     aux.status = 1;
     fseek(fp, 0L, SEEK_END);
     pos = ftell(fp);
-    fwrite(&aux, sizeof(TA), 1, fp);
+    fwrite(&aux, sizeof(THT), 1, fp);
     if(ant != -1){
       fseek(fp, ant, SEEK_SET);
-      fread(&aux, sizeof(TA), 1, fp);
+      fread(&aux, sizeof(THT), 1, fp);
       aux.prox = pos;
       fseek(fp, ant, SEEK_SET);
-      fwrite(&aux, sizeof(TA), 1, fp);
+      fwrite(&aux, sizeof(THT), 1, fp);
     }
     else{
       fseek(fph, h*sizeof(int), SEEK_SET);
@@ -260,38 +587,220 @@ void TH_insere(char *tabHash, char *arq, int n, int mat, float cr){
     return;
   }
   fseek(fp, prim_pos_livre, SEEK_SET);
-  fread(&aux, sizeof(TA), 1, fp);
-  aux.mat = mat;
-  aux.cr = cr;
+  fread(&aux, sizeof(THT), 1, fp);
+  aux.id = id;
   aux.status = 1;
   fseek(fp, prim_pos_livre, SEEK_SET);
-  fwrite(&aux, sizeof(TA), 1, fp);
+  fwrite(&aux, sizeof(THT), 1, fp);
   fclose(fp);
   fclose(fph);
-  return;
+}
+void THV_insere(int id, int indiceTorneios){
+  FILE *fph = fopen("./hashs/THV.bin", "rb+");
+  if(!fph) exit(1);
+  int pos, h = THV_hash(indiceTorneios);
+  fseek(fph, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fph);
+  int ant, prim_pos_livre;
+  ant = prim_pos_livre = -1;
+  FILE *fp = fopen("./hash/THV_dados.bin","rb+");
+  if(!fp){
+    fclose(fph);
+    exit(1);
+  }
+  THT aux;
+  while(pos != -1){
+    fseek(fp, pos, SEEK_SET);
+    fread(&aux, sizeof(THT), 1, fp);
+    if(aux.id == id){
+      aux.status = 1;
+      fseek(fp, pos, SEEK_SET);
+      fwrite(&aux, sizeof(THT), 1, fp);
+      fclose(fp);
+      fclose(fph);
+      return;
+    }
+    if((!aux.status) && (prim_pos_livre == -1))prim_pos_livre=pos;
+    ant = pos;
+    pos = aux.prox;
+  }
+  if(prim_pos_livre == -1){
+    aux.id = id;
+    aux.prox = -1;
+    aux.status = 1;
+    fseek(fp, 0L, SEEK_END);
+    pos = ftell(fp);
+    fwrite(&aux, sizeof(THT), 1, fp);
+    if(ant != -1){
+      fseek(fp, ant, SEEK_SET);
+      fread(&aux, sizeof(THT), 1, fp);
+      aux.prox = pos;
+      fseek(fp, ant, SEEK_SET);
+      fwrite(&aux, sizeof(THT), 1, fp);
+    }
+    else{
+      fseek(fph, h*sizeof(int), SEEK_SET);
+      fwrite(&pos, sizeof(int), 1, fph);
+    }
+    fclose(fp);
+    fclose(fph);
+    return;
+  }
+  fseek(fp, prim_pos_livre, SEEK_SET);
+  fread(&aux, sizeof(THT), 1, fp);
+  aux.id = id;
+  aux.status = 1;
+  fseek(fp, prim_pos_livre, SEEK_SET);
+  fwrite(&aux, sizeof(THT), 1, fp);
+  fclose(fp);
+  fclose(fph);
+}
+void THNAC_insere(int id){
+  FILE *fph = fopen("./hashs/THNAC.bin", "rb+");
+  if(!fph) exit(1);
+  int pos, h = THNAC_hash(id);
+  fseek(fph, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fph);
+  int ant, prim_pos_livre;
+  ant = prim_pos_livre = -1;
+  FILE *fp = fopen("./hash/THNAC_dados.bin","rb+");
+  if(!fp){
+    fclose(fph);
+    exit(1);
+  }
+  THT aux;
+  while(pos != -1){
+    fseek(fp, pos, SEEK_SET);
+    fread(&aux, sizeof(THT), 1, fp);
+    if(aux.id == id){
+      aux.status = 1;
+      fseek(fp, pos, SEEK_SET);
+      fwrite(&aux, sizeof(THT), 1, fp);
+      fclose(fp);
+      fclose(fph);
+      return;
+    }
+    if((!aux.status) && (prim_pos_livre == -1))prim_pos_livre=pos;
+    ant = pos;
+    pos = aux.prox;
+  }
+  if(prim_pos_livre == -1){
+    aux.id = id;
+    aux.prox = -1;
+    aux.status = 1;
+    fseek(fp, 0L, SEEK_END);
+    pos = ftell(fp);
+    fwrite(&aux, sizeof(THT), 1, fp);
+    if(ant != -1){
+      fseek(fp, ant, SEEK_SET);
+      fread(&aux, sizeof(THT), 1, fp);
+      aux.prox = pos;
+      fseek(fp, ant, SEEK_SET);
+      fwrite(&aux, sizeof(THT), 1, fp);
+    }
+    else{
+      fseek(fph, h*sizeof(int), SEEK_SET);
+      fwrite(&pos, sizeof(int), 1, fph);
+    }
+    fclose(fp);
+    fclose(fph);
+    return;
+  }
+  fseek(fp, prim_pos_livre, SEEK_SET);
+  fread(&aux, sizeof(THT), 1, fp);
+  aux.id = id;
+  aux.status = 1;
+  fseek(fp, prim_pos_livre, SEEK_SET);
+  fwrite(&aux, sizeof(THT), 1, fp);
+  fclose(fp);
+  fclose(fph);
+}
+void THVT_insere(int id, int indiceTorneios){
+  FILE *fph = fopen("./hashs/THVT.bin", "rb+");
+  if(!fph) exit(1);
+  int pos, h = THVT_hash(indiceTorneios);
+  fseek(fph, h*sizeof(int), SEEK_SET);
+  fread(&pos, sizeof(int), 1, fph);
+  int ant, prim_pos_livre;
+  ant = prim_pos_livre = -1;
+  FILE *fp = fopen("./hash/THVT_dados.bin","rb+");
+  if(!fp){
+    fclose(fph);
+    exit(1);
+  }
+  THT aux;
+  while(pos != -1){
+    fseek(fp, pos, SEEK_SET);
+    fread(&aux, sizeof(THT), 1, fp);
+    if(aux.id == id){
+      aux.status = 1;
+      fseek(fp, pos, SEEK_SET);
+      fwrite(&aux, sizeof(THT), 1, fp);
+      fclose(fp);
+      fclose(fph);
+      return;
+    }
+    if((!aux.status) && (prim_pos_livre == -1))prim_pos_livre=pos;
+    ant = pos;
+    pos = aux.prox;
+  }
+  if(prim_pos_livre == -1){
+    aux.id = id;
+    aux.prox = -1;
+    aux.status = 1;
+    fseek(fp, 0L, SEEK_END);
+    pos = ftell(fp);
+    fwrite(&aux, sizeof(THT), 1, fp);
+    if(ant != -1){
+      fseek(fp, ant, SEEK_SET);
+      fread(&aux, sizeof(THT), 1, fp);
+      aux.prox = pos;
+      fseek(fp, ant, SEEK_SET);
+      fwrite(&aux, sizeof(THT), 1, fp);
+    }
+    else{
+      fseek(fph, h*sizeof(int), SEEK_SET);
+      fwrite(&pos, sizeof(int), 1, fph);
+    }
+    fclose(fp);
+    fclose(fph);
+    return;
+  }
+  fseek(fp, prim_pos_livre, SEEK_SET);
+  fread(&aux, sizeof(THT), 1, fp);
+  aux.id = id;
+  aux.status = 1;
+  fseek(fp, prim_pos_livre, SEEK_SET);
+  fwrite(&aux, sizeof(THT), 1, fp);
+  fclose(fp);
+  fclose(fph);
 }
 
-void TH_imprime (char *nome_hash, char *nome_dados, int m){
-  FILE *fp = fopen(nome_hash, "rb");
-  if(!fp) exit(1);
-  int vet[m];
-  fread(&vet, sizeof(int), m, fp);
-  fclose(fp);
 
-  fp = fopen(nome_dados, "rb");
+
+
+void THP_imprime(){
+  FILE *fp = fopen("./hashs/THP.bin", "rb");
+  if(!fp) exit(1);
+  int vet[35];
+  fread(&vet, sizeof(int), 35, fp); //interessante para a lista de paises
+  fclose(fp);
+  fp = fopen("./hashs/THP_dados.bin", "rb");
   if(!fp) exit(1);
   int i, pos;
-  for(i = 0; i < m; i++){
+  for(i = 0; i < 35; i++){
     int p = vet[i];
     if(p != -1) printf("%d:\n", i);
-    TA x;
+    THTpts x;
     while(p != -1){
       fseek(fp, p, SEEK_SET);
       pos = ftell (fp);
-      fread(&x, sizeof(TA), 1, fp);
-      printf("$%d: matricula: %d\tcr: %f\tstatus: %d\tprox_end: $%d\n", pos, x.mat, x.cr, x.status, x.prox);
+      fread(&x, sizeof(THTpts), 1, fp);
+      printf("$%d: id: %d\t pontos: %d\tstatus: %d\tprox_end: $%d\n", pos, x.id, x.pontuacao, x.status, x.prox);
       p = x.prox;
     }
   }
   fclose(fp);
 }
+
+

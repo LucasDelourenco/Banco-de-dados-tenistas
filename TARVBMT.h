@@ -13,6 +13,12 @@ typedef struct tenistas{
   //int anoVenceuGrands[35]; //(Q2) usar? vamos decidir depois
   int TorneiosGanhos[15];
 }TT;
+typedef struct tlsetenistas{
+  TT tenista;
+  struct tlsetenistas *prox;
+}TLSETT;
+
+
 //ID: [CPF(100-537)] [Nacion(10-59)] [AnoNasc(10-54)]
 //       3 digs          2 digs          2 digs        =  7 digs total
 
@@ -34,15 +40,33 @@ typedef struct listaDeTenistas{
   struct listaDeTenistas *prox;
 }TLSETT;
 
+int TT_num_titulos(TT tenista);
+TT TT_cria_vazio();
+void cria_arq_paises(char *vetPaises[50]);
+void ler_arq_paises();
 
-TARVBMT *TARVBMT_cria(int t);
-TARVBMT *TARVBMT_inicializa(void);
-TARVBMT *TARVBMT_busca(TARVBMT *a, int mat);
-TARVBMT *TARVBMT_insere(TARVBMT *T, int mat, int t);
-TARVBMT* TARVBMTretira(TARVBMT* arv, int k, int t);
-void TARVBMT_libera(TARVBMT *a);
-void TARVBMT_imprime(TARVBMT *a);
-void TARVBMT_imprime_chaves(TARVBMT *a);
+TT TT_completaInfoChampionsTxt(TT tenista);
+int posPaisEmVet(char *pais,char *vetPais[50]);
+void TARVBMT_criaPorTxt(int t);
+
+int int_len(int num);
+void TARVBMT_libera(char *arq);
+TT TARVBMT_busca(int id,int t); //TBT (ToBeTested)
+
+NOFO* NOFO_cria(int t);
+NOINT* NOINT_cria(int t);
+void gerar_nome_no(char *retorno, int num_nos_internos);
+void gerar_nome_folha(char *retorno, int num_folhas);
+void NOFO_libera(NOFO *no, int t);
+void NOINT_libera(NOINT *no, int t);
+void NOINT_imprime(NOINT *no, int t);
+void NOFO_imprime(NOFO *no, int t);
+int campo_vazio(char* campo);
+int aumenta_um(char *nome_ent, char *destino);
+int diminui_um(char *nome_ent, char *destino);
+long buscar_pos_no(FILE *f_indice, char *nome_no, int t);
+void escreve_no(FILE *file, NOINT *no, int t);
+void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t);
 
 /*
 
@@ -51,7 +75,8 @@ separadamente em ordem decrescente do número de títulos. Os títulos de grand 
 apresentados primeiro, seguido dos de ATP 1000, ATP Finals e Olimpíadas. A ordem dos torneios
 deve ser respeitada: os grand slams e os ATP 1000 aparecem em ordem no arquivo de entrada; e
 O ATP Finals é o último torneio do ano e só participam os OITO melhores da temporada.
-
+IDEIA: jogar todos os jogadores aposentados/ativos numa TLSETT e e ordenar ela (primeiro por pontuacao(opccional?), depois por numTitulos)
+usando a funcao: int TT_num_titulos(TT tenista);
 
 → se existem jogadores que nasceram no mesmo ano que seu compatriota (que possui um
 ranking) ganhou algum grand slam?
@@ -59,13 +84,15 @@ ranking) ganhou algum grand slam?
 
 → se ninguém tivesse se aposentado ainda, qual seria a pontuação acumulada de cada um dos
 jogadores, em ordem decrescente?
+IDEIA: imprimir ultima linha/ano da THP com TLSEid *THP_busca_primeiros_ateh_N_Do_Ano(int ano, int qtd_n)
 
 
 → indique o ranking (até 25) por ano, de acordo com a pontuação obtida em cada ano.
-
+IDEIA: chamar para cada linha/ano : TLSEid *THP_busca_primeiros_ateh_N_Do_Ano(int ano, int qtd_n) com qtd_n = 25
 
 → se existe algum jogador que ganhou todos os grand slams no mesmo ano? Se sim, retornar
 o(s) nome(s) do(s) jogador(es) e o(s) ano(s).
+IDEIA: pego todos na primeira linha de THV e checo se tenista.anoGanhouTodosGrands != -1 
 
 
 → se existe algum jogador que “furou” o ranking, isto é, ganhou algum torneio, mas não estava no

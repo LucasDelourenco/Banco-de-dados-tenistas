@@ -498,6 +498,22 @@ void Cria_indicesTeste(){
     fclose(fp);
 }
 
+void cria_arq_paises(char *vetPaises[50]){
+  FILE *fp = fopen("./auxiliares/paises.bin","wb+");
+  for(int i = 0; i<50; i++) fwrite(vetPaises[i],sizeof(char),51,fp);
+  fclose(fp);
+}
+
+void ler_arq_paises(){
+  FILE *fp = fopen("./auxiliares/paises.bin","rb+");
+  char nome[51];
+  for(int i = 0; i<50; i++){
+    fread(&nome,sizeof(char)*51,1,fp);
+    printf("%s\n",nome);
+  }
+  fclose(fp);
+}
+
 int main(void){
    //teste_appendArqBin();
    //ler_tudo();
@@ -507,5 +523,19 @@ int main(void){
     //teste_TT_completaInfoChampionsTxt();
     //teste_leituraTxt2();
     //Cria_indicesTeste();
-   
+
+    /* funciona
+    char *vet[50], ih[3], nome[51];
+    for (int i = 0; i < 50; i++) {
+        vet[i] = malloc(51 * sizeof(char));
+    }
+    for(int i = 0; i<50; i++){
+        sprintf(ih,"%d",i);
+        strcpy(nome,"Brazil-");
+        strcat(nome,ih);
+        strcpy(vet[i],nome);
+    }
+    cria_arq_paises(vet);
+    ler_arq_paises();
+   */
 }

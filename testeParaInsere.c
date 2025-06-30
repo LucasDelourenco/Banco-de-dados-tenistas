@@ -167,7 +167,7 @@ void escreve_no(FILE *file, NOINT *no, int t){
   fwrite(no->filhos, sizeof(char), 6*2*t, file);
 }
 
-void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WIP
+void divisao_MS(char *indice, int i, long pos_pai, long pos_dividido, int t){ //WIP
   FILE *f_indice = fopen(indice, "rb+");
   if (!f_indice){
     perror("divisao_MS:Falha em abrir o arquivo indice no modo de leitura.\n");
@@ -190,7 +190,7 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
   NOINT *x;
   x = NOINT_cria(t);
 
-  //Preenche x com as informalçoes
+  //Preenche x com as informaçoes
   fseek(f_indice, pos_pai, SEEK_SET); //anda ate no pra ser dividido
   fread(x->rotulo, sizeof(char), 6, f_indice); //Le o rotulo Nxxxx
   fread(&x->nchaves, sizeof(int), 1, f_indice); //Le o int numero de chaves
@@ -206,10 +206,7 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
   int numDividido = pos_dividido/tamBloco;
   char buffer[tamBloco];
 
-  
-
   if (no != 'F'){ //Caso o dividido seja no interno
-    
     NOINT *y, *z;
 
     y = NOINT_cria(t);
@@ -224,7 +221,7 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
 
     y->nchaves = t-1;
     z->nchaves = t-1;
-
+    
     for(j=0;j<t-1;j++){
       z->vet_chaves[j] = y->vet_chaves[j+t];
       y->vet_chaves[j+t] = -1;
@@ -234,7 +231,6 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
       memset(y->filhos[j+t], '\0', sizeof(char[6]));
     }
 
-    //
     aumenta_um(y->rotulo, z->rotulo);
 
     for (j=x->nchaves; j>=i; j--){  //Move todos os filhos a direita da posição i e incrementa os seus rotulos/nomes em 1
@@ -249,8 +245,10 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
 
     // Atualiza o arquivo de indice
     FILE *fnovo = fopen("novo.bin", "wb");
+    fseek(f_indice, 0L, SEEK_SET);
 
     for(j=0; j<numPai; j++){ //Copiar tudo até chegar no pai do nó que está sendo dividido
+      printf("Erro: Entrei no loop com (pai = N0000?)\n");
       fread(buffer, 1, tamBloco, f_indice);
       fwrite(buffer, 1, tamBloco, fnovo);
     }
@@ -259,6 +257,7 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
     escreve_no(fnovo, x, t);  //Escreve o no pai novo
 
     for(j=numPai; j<numDividido-tamBloco; tamBloco){ //Copiar tudo até chegar no dividido
+      printf("Erro: Entrei no loop com (dividido = N0001?)\n");
       fread(buffer, 1, tamBloco, f_indice); 
       fwrite(buffer, 1, tamBloco, fnovo);  
     }
@@ -267,24 +266,31 @@ void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t){ //WI
     escreve_no(fnovo, y, t);  //Escreve o dividido novo
     escreve_no(fnovo, z, t);  //Escreve o novo no que surgiu da divisao
 
-    for(j=((fimDosBlocos-pos_dividido)/tamBloco)-1; j>0; j--){ //Copia tudo até chegar no fim
-      fread(buffer, 1, tamBloco, f_indice);
-      fwrite(buffer, 1, tamBloco, fnovo);
+    NOINT *no_aux = NOINT_cria(t);
+
+    while (fread(no_aux->rotulo, sizeof(char), 6, f_indice) == 6){ //Copia tudo até chegar no fim
+      aumenta_um(no_aux->rotulo, no_aux->rotulo);
+      fread(&no_aux->nchaves, sizeof(int), 1, f_indice);
+      fread(no_aux->vet_chaves, sizeof(int), (2*t)-1, f_indice);
+      fread(no_aux->filhos, sizeof(char), 6*2*t, f_indice);
+      NOINT_imprime(no_aux, t);
+      escreve_no(fnovo, no_aux, t);
     }
     fwrite(&nfolhas, sizeof(int), 1, fnovo);  //Escreve o numero de folhas
 
-    fclose(fnovo);
-    fclose(f_indice);
+    if (fclose(fnovo) != 0) perror("Nao foi possivel fechar o arquivo -fnovo-\n");
+    if (fclose(f_indice) != 0) perror("Nao foi possivel fechar o arquivo -f_indice-\n");
 
-    remove(indice);
-    rename("novo.bin", indice);
-
-    NOINT_imprime(x, t);
-    NOINT_imprime(y, t);
-    NOINT_imprime(z, t);
+    if (remove(indice) != 0) perror("Falha na remocao de INDICES.bin\n");
+    if (rename("novo.bin", indice) != 0) printf("Falha na renomeacao de -novo.bin- com -INDICES.bin-\n");
+    
+    //NOINT_imprime(x, t);
+    //NOINT_imprime(y, t);
+    //NOINT_imprime(z, t);
 
     NOINT_libera(y, t);
     NOINT_libera(z, t);
+    NOINT_libera(no_aux, t);
 
   }
   else { //Caso seja folha
@@ -566,11 +572,14 @@ void Cria_indicesTeste(){
 }
 
 
+
+
 int main(void){
   
   Cria_indicesTeste();
 
-  int i=0;
+  
+  int i=1;
   FILE *fp = fopen("INDICES.bin","rb+");
   long pai = buscar_pos_no(fp,"N0000",2),y = buscar_pos_no(fp,"N0001",2);
   fclose(fp);

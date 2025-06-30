@@ -28,6 +28,13 @@ typedef struct nofolha{
   int num_info;
 } NOFO;
 
+//para resolver Q1
+int TT_num_titulos(TT tenista){
+  int count=0;
+  for(int i = 0; i<15; i++) count += tenista.TorneiosGanhos[i];
+  return count;
+}
+
 TT TT_cria_vazio(){
   TT novo;
   //tenistas.txt
@@ -44,6 +51,24 @@ TT TT_cria_vazio(){
   novo.anoGanhouTodosGrands=-1;
   for(int i = 0; i<15; i++) novo.TorneiosGanhos[i] = 0;
   return novo;
+}
+
+//Arquivo usado para buscar por pais(dado o nome do pais, saber qual o NACid dele)
+void cria_arq_paises(char *vetPaises[50]){ 
+  FILE *fp = fopen("./auxiliares/paises.bin","wb+");
+  for(int i = 0; i<50; i++) fwrite(vetPaises[i],sizeof(char),51,fp);
+  fclose(fp);
+}
+
+//Para checar se o arquivo está certo
+void ler_arq_paises(){
+  FILE *fp = fopen("./auxiliares/paises.bin","rb+");
+  char nome[51];
+  for(int i = 0; i<50; i++){
+    fread(&nome,sizeof(char)*51,1,fp);
+    printf("%s\n",nome);
+  }
+  fclose(fp);
 }
 
 TT TT_completaInfoChampionsTxt(TT tenista){
@@ -101,8 +126,8 @@ TT TT_completaInfoChampionsTxt(TT tenista){
   return tenista;
 }
 
-int posPaisEmVet(char *pais,char *vetPais[40]){
-    for(int i = 0; i<40; i++) if(vetPais[i]!=NULL && strcmp(pais,vetPais[i]) == 0) return i;
+int posPaisEmVet(char *pais,char *vetPais[50]){
+    for(int i = 0; i<50; i++) if(vetPais[i]!=NULL && strcmp(pais,vetPais[i]) == 0) return i;
     return -1;
 }
 //durante a coleta de infos, jogar nas hashs
@@ -228,8 +253,8 @@ void TARVBMT_libera(char *arq){ //nome deve vir como Indices.bin
 }
 
 //                 Indices   id   TdaArvore
-TT TARVBMT_busca(char *arq,int id,int t){ //TBT (ToBeTested)
-  FILE *fp = fopen(arq,"rb+");
+TT TARVBMT_busca(int id,int t){ //TBT (ToBeTested)
+  FILE *fp = fopen("INDICES.bin","rb+");
   if(!fp) exit(1);
   char identfNo[6], filho[6];
   int numchaves,qtdLidos,i,pos,tamPorBloco = (sizeof(char)*6 + sizeof(int) + sizeof(int)*((2*t)-1) + (sizeof(char)*6)*(2*t));
@@ -280,7 +305,7 @@ TT TARVBMT_busca(char *arq,int id,int t){ //TBT (ToBeTested)
   return tenista;
 }
 
-
+/*
 void TARVBMT_imprime_chaves(TARVBMT *a){
   if(!a) return;
   TARVBMT *p = a;
@@ -557,7 +582,7 @@ TARVBMT* remover(TARVBMT* arv, int ch, int t){
 TARVBMT* TARVBMT_retira(TARVBMT* arv, int k, int t){
   if(!arv || !TARVBMT_busca(arv, k)) return arv;
   return remover(arv, k, t);
-}
+}*/
 
 void TARVBMT_insere_MS (TT *tenista, char arq_ind, int t){ //WIP     //O primeiro numero será o numero de filhos
   FILE *f_ind = fopen(arq_ind, "rb+");

@@ -269,6 +269,7 @@ void Cria_indicesTeste(){
     fclose(fp);
 }
 
+
 int main(void){
     //Cria_indicesTeste();
     imprime("INDICES.bin",2);
