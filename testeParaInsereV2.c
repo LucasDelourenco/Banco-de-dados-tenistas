@@ -1,17 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include "TARVBMT.h"
-//#include "imprime.h"
-//#include "testeParaInsere.c"
-//#define t 2
-
-//
-//
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 typedef struct tenistas{
   //tenistas.txt
@@ -151,13 +140,13 @@ void Cria_indicesTeste(){
     int id,num;
 
     //arq indice
-    id = 20087967;
-    num = 2;
+    id = 2087967;
+    num = 1;
     strcpy(nome,"N0000");
     fwrite(&nome,sizeof(char),6,fp);
     fwrite(&num,sizeof(int),1,fp);
     fwrite(&id,sizeof(int),1,fp);
-    id = 2095611;
+    id = -1;
     fwrite(&id,sizeof(int),1,fp);
     id = -1;
     fwrite(&id,sizeof(int),1,fp);
@@ -165,52 +154,33 @@ void Cria_indicesTeste(){
     fwrite(&nome,sizeof(char),6,fp);
     strcpy(nome,"N0002");
     fwrite(&nome,sizeof(char),6,fp);
-    strcpy(nome,"N0003");
+    strcpy(nome,"\0\0\0\0\0\0");
     fwrite(&nome,sizeof(char),6,fp);
-    strcpy(nome,"\0");
+    strcpy(nome,"\0\0\0\0\0\0");
     fwrite(&nome,sizeof(char),6,fp);
 
     id = 1035780;
-    num = 1;
+    num = 3;
     strcpy(nome,"N0001");
     fwrite(&nome,sizeof(char),6,fp);
     fwrite(&num,sizeof(int),1,fp);
     fwrite(&id,sizeof(int),1,fp);
-    id = -1;
+    id = 1045780;
     fwrite(&id,sizeof(int),1,fp);
-    id = -1;
+    id = 1055780;
     fwrite(&id,sizeof(int),1,fp);
     strcpy(nome,"F0000");
     fwrite(&nome,sizeof(char),6,fp);
     strcpy(nome,"F0001");
     fwrite(&nome,sizeof(char),6,fp);
-    strcpy(nome,"\0");
-    fwrite(&nome,sizeof(char),6,fp);
-    strcpy(nome,"\0");
-    fwrite(&nome,sizeof(char),6,fp);
-
-    id = 2025679;
-    num = 1;
-    strcpy(nome,"N0002");
-    fwrite(&nome,sizeof(char),6,fp);
-    fwrite(&num,sizeof(int),1,fp);
-    fwrite(&id,sizeof(int),1,fp);
-    id = -1;
-    fwrite(&id,sizeof(int),1,fp);
-    id = -1;
-    fwrite(&id,sizeof(int),1,fp);
     strcpy(nome,"F0002");
     fwrite(&nome,sizeof(char),6,fp);
     strcpy(nome,"F0003");
     fwrite(&nome,sizeof(char),6,fp);
-    strcpy(nome,"\0");
-    fwrite(&nome,sizeof(char),6,fp);
-    strcpy(nome,"\0");
-    fwrite(&nome,sizeof(char),6,fp);
 
-    id = 2205611;
+    id = 3087570;
     num = 1;
-    strcpy(nome,"N0003");
+    strcpy(nome,"N0002");
     fwrite(&nome,sizeof(char),6,fp);
     fwrite(&num,sizeof(int),1,fp);
     fwrite(&id,sizeof(int),1,fp);
@@ -222,9 +192,9 @@ void Cria_indicesTeste(){
     fwrite(&nome,sizeof(char),6,fp);
     strcpy(nome,"F0005");
     fwrite(&nome,sizeof(char),6,fp);
-    strcpy(nome,"\0");
+    strcpy(nome,"\0\0\0\0\0\0");
     fwrite(&nome,sizeof(char),6,fp);
-    strcpy(nome,"\0");
+    strcpy(nome,"\0\0\0\0\0\0");
     fwrite(&nome,sizeof(char),6,fp);
 
     num = 6;
@@ -235,58 +205,55 @@ void Cria_indicesTeste(){
     //arqs folhas
     fp = fopen("./infos/F0000.bin","wb+");
     TT tenista = TT_cria_vazio();
-    num = 3;
-    strcpy(tenista.nome,"Emanuel");
+    num = 1;
+    strcpy(tenista.nome,"Pedro");
     tenista.id = 1001010;
-    fwrite(&tenista,sizeof(TT),1,fp);
-    strcpy(tenista.nome,"Henrique");
-    tenista.id = 1011011;
-    fwrite(&tenista,sizeof(TT),1,fp);
-    strcpy(tenista.nome,"Lucas");
-    tenista.id = 1021010;
+    strcpy(tenista.pais,"Brazil");
     fwrite(&tenista,sizeof(TT),1,fp);
     fwrite(&num,sizeof(int),1,fp);
     fclose(fp);
 
     fp = fopen("./infos/F0001.bin","wb+");
     num = 1;
-    strcpy(tenista.nome,"Pedro");
-    tenista.id = 1038888;
+    strcpy(tenista.nome,"Gustavo");
+    tenista.id = 1035888;
+    strcpy(tenista.pais,"Brazil");
     fwrite(&tenista,sizeof(TT),1,fp);
     fwrite(&num,sizeof(int),1,fp);
     fclose(fp);
 
     fp = fopen("./infos/F0002.bin","wb+");
     num = 1;
-    strcpy(tenista.nome,"Gustavo");
-    tenista.id = 2015679;
+    strcpy(tenista.nome,"Leandro Barros");
+    tenista.id = 1054110;
+    strcpy(tenista.pais,"Brazil");
     fwrite(&tenista,sizeof(TT),1,fp);
     fwrite(&num,sizeof(int),1,fp);
     fclose(fp);
 
     fp = fopen("./infos/F0003.bin","wb+");
     num = 1;
-    strcpy(tenista.nome,"Joao Pedro");
-    tenista.id = 2025679;
+    strcpy(tenista.nome,"Luis");
+    tenista.id = 1071717;
+    strcpy(tenista.pais,"Brazil");
     fwrite(&tenista,sizeof(TT),1,fp);
     fwrite(&num,sizeof(int),1,fp);
     fclose(fp);
 
     fp = fopen("./infos/F0004.bin","wb+");
     num = 1;
-    strcpy(tenista.nome,"Paulo");
-    tenista.id = 2195611;
+    strcpy(tenista.nome,"Fernando");
+    tenista.id = 2091010;
+    strcpy(tenista.pais,"Brazil");
     fwrite(&tenista,sizeof(TT),1,fp);
     fwrite(&num,sizeof(int),1,fp);
     fclose(fp);
 
     fp = fopen("./infos/F0005.bin","wb+");
-    num = 2;
-    strcpy(tenista.nome,"Begona");
-    tenista.id = 2205611;
-    fwrite(&tenista,sizeof(TT),1,fp);
-    strcpy(tenista.nome,"Paula");
-    tenista.id = 2305611;
+    num = 1;
+    strcpy(tenista.nome,"Pablo");
+    tenista.id = 4001010;
+    strcpy(tenista.pais,"Brazil");
     fwrite(&tenista,sizeof(TT),1,fp);
     fwrite(&num,sizeof(int),1,fp);
     fclose(fp);
@@ -341,7 +308,7 @@ void NOINT_libera(NOINT *no){
 void NOINT_imprime(NOINT *no, int t){
   int op;
   printf("Deseja imprimir o no %s?(Sim:0/Nao:1) ", no->rotulo);
-  scanf(" %d", &op);
+  //scanf(" %d", &op);
   if (op) return;
 
   printf("\n");
@@ -355,7 +322,7 @@ void NOINT_imprime(NOINT *no, int t){
 void NOFO_imprime(NOFO *no, int t){
   int op;
   printf("Deseja imprimir o no %s?(Sim:0/Nao:1) ", no->rotulo);
-  scanf(" %d", &op);
+  //scanf(" %d", &op);
   if (op) return;
 
   printf("\n");
@@ -898,8 +865,9 @@ void insere_na_folha(const char *arq_indice, const char *arq_folha, TT novo_atle
 
 // A ideia eh gerar um pai para antiga raiz e dps chamar a divisao_MS
 void divisao_raiz(const char *arq_indice, long tam_bloco, int t){ //adicionado parametro int t
-  //A divisao da raiz nao funciona, no ultimo testa ela quebrou a arvore e manteve somente um terco dela
+  //Nao funciona, quebra a arvore!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     FILE *fp_original = fopen(arq_indice, "rb+");
+    int nfolhas;
     if(!fp_original){
         printf("nao foi possivel abrir o arquivo original(divisao_raiz)\n");
         exit(1);
@@ -945,7 +913,8 @@ void divisao_raiz(const char *arq_indice, long tam_bloco, int t){ //adicionado p
     // Filho 0 da nova raiz eh a antiga raiz
     sprintf(rotulo_copia_raiz_antiga, "N%04ld", num_nos_internos);// Cria um no com nome nao usado antes
     strcpy(filhos_nova_raiz[0], rotulo_copia_raiz_antiga); // A nova raiz aponta para este novo no
-    for(int j = 0; j < (2 * t); j++) strcpy(filhos_nova_raiz[j], "\0");
+    //for(int j = 0; j < (2 * t); j++) strcpy(filhos_nova_raiz[j], "\0");
+    for(int j = 1; j < (2 * t); j++) memset(filhos_nova_raiz[j], '\0', sizeof(char)*6);
 
     // Escrendo a nova raiz no arq_tmp
    fwrite(rotulo_nova_raiz, sizeof(char), 6, fp_tmp);
@@ -962,6 +931,7 @@ void divisao_raiz(const char *arq_indice, long tam_bloco, int t){ //adicionado p
             fwrite(buffer,tam_bloco, 1, fp_tmp);
         }
    }
+   fread(&nfolhas, sizeof(int), 1, fp_original); //IMPORTANTE
 
    // A raiz antiga vai receber novo rotulo e vai para o final do arq
    strcpy(rotulo_antiga_raiz, rotulo_copia_raiz_antiga); 
@@ -969,6 +939,8 @@ void divisao_raiz(const char *arq_indice, long tam_bloco, int t){ //adicionado p
    fwrite(&nchaves_antiga_raiz, sizeof(int), 1, fp_tmp);
    fwrite(chaves_antiga_raiz, sizeof(int), (2 * t - 1), fp_tmp);
    fwrite(filhos_antiga_raiz, sizeof(char[6]), (2 * t), fp_tmp);
+
+   fwrite(&nfolhas, sizeof(int), 1, fp_tmp); //IMPORTANTE²
 
    // Pega a posicao da copia da raiz e atualiza indice
    long pos_copia_raiz = num_nos_internos * tam_bloco;
@@ -1049,7 +1021,7 @@ void insere(const char *arq_indice, TT novo_atleta, int t){ //adicionado paramet
         if(nchaves_filho == (2 * t -1 )){
             printf("No interno cheio, chamando divisao_MS");
             fclose(fp_indice);
-            divisao_MS((char *)arq_indice, (i+1), ptr_atual, ptr_filho, t); //PROGRAMA ESTÁ PARANDO AQUI
+            divisao_MS((char *)arq_indice, (i+1), ptr_atual, ptr_filho, t); //PROGRAMA ESTÁ PARANDO AQU
             fp_indice = fopen(arq_indice, "rb");
             printf("CHEGOU\n");
             ptr_atual = 0L;
@@ -1073,7 +1045,7 @@ void insere(const char *arq_indice, TT novo_atleta, int t){ //adicionado paramet
 //
 //
 //
-//testando o insere
+//testando o insere -> FUNCIONAAA!
 //
 //
 //
@@ -1081,10 +1053,12 @@ void insere(const char *arq_indice, TT novo_atleta, int t){ //adicionado paramet
 int main(void){
     TT tenista = TT_cria_vazio();
     int continua, t = 2;
+    Cria_indicesTeste();
     //FILE *fp = fopen("INDICES.bin","wb");
     //fclose(fp);
+    //scanf("%d",&continua);
 
-    tenista.id = 1001010;
+    tenista.id = 1001011;
     strcpy(tenista.nome,"Gustavo Um");
     insere("INDICES.bin",tenista,t);
     printf("CHEGOU\n");

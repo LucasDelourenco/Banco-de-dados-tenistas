@@ -162,7 +162,7 @@ void divisao_raiz(const char *arq_indice, long tam_bloco){
     // Filho 0 da nova raiz eh a antiga raiz
     sprintf(rotulo_copia_raiz_antiga, "N%04ld", num_nos_internos);// Cria um no com nome nao usado antes
     strcpy(filhos_nova_raiz[0], rotulo_copia_raiz_antiga); // A nova raiz aponta para este novo no
-    for(int j = 0; j < (2 * t); j++) filhos_nova_raiz[j][0] = '\0';
+    for(int j = 1; j < (2 * t); j++) filhos_nova_raiz[j][0] = '\0'; //ANTES ERA j = 0
 
     // Escrevndo a nova raiz no arq_tmp
    fwrite(rotulo_nova_raiz, sizeof(char), 6, fp_tmp);
