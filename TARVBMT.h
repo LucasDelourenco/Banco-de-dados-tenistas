@@ -66,7 +66,7 @@ int aumenta_um(char *nome_ent, char *destino);
 int diminui_um(char *nome_ent, char *destino);
 long buscar_pos_no(FILE *f_indice, char *nome_no, int t);
 void escreve_no(FILE *file, NOINT *no, int t);
-void divisao_MS(char *indice, int i, int pos_pai, int pos_dividido, int t);
+void divisao_MS(char *indice, int i, long pos_pai, long pos_dividido, int t);
 
 /*
 

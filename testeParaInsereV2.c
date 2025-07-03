@@ -954,11 +954,56 @@ void divisao_raiz(const char *arq_indice, long tam_bloco, int t){ //adicionado p
    divisao_MS((char *)arq_indice, 1, 0, pos_copia_raiz, t); // i=1 significa que desce no filho mais a esquerda!
 }
 
+
+void inicializa(const char *arq_indice, int t){
+
+  // Criando folha
+  char new_folha[51] = "infos/F0000.bin";
+  FILE *fp_folha = fopen(new_folha, "wb");
+  if (!fp_folha) {
+      printf("Erro ao criar o primeiro arquivo de folha\n");
+      exit(1);
+  }
+
+  int num_atletas = 0;
+  fwrite(&num_atletas, sizeof(int), 1, fp_folha);
+  fclose(fp_folha);
+
+  // Criando arquivo indice e seu conteudo
+  FILE *fp_indice = fopen(arq_indice, "wb");
+  if(!fp_indice){
+    printf("Erro ao criar o arquivo de indice\n");
+    exit(1);
+  }
+  char rotulo[6] = "N0000"; 
+  int nchaves = 0; 
+  int chaves[2 * t - 1];
+  memset(chaves, -1, sizeof(chaves));
+  char filhos[2 * t][6];
+  memset(filhos, '\0', sizeof(filhos));
+  strcpy(filhos[0], "F0000");// primeiro filho folha 0
+  int nfolhas = 1;
+
+  // Escrevendo no arquivo indice
+  fwrite(rotulo, sizeof(char), 6, fp_indice);
+  fwrite(&nchaves, sizeof(int), 1, fp_indice);
+  fwrite(chaves, sizeof(int), (2 * t - 1), fp_indice);
+  fwrite(filhos, sizeof(char) * 6, (2 * t), fp_indice);
+  fwrite(&nfolhas, sizeof(int), 1, fp_indice);
+
+  fclose(fp_indice);
+}
+
 void insere(const char *arq_indice, TT novo_atleta, int t){ //adicionado parametro int t
     FILE *fp_indice = fopen(arq_indice, "rb");
     if(!fp_indice) {
-        perror("Erro ao abrir arquivo de indice");
-        exit(1);
+        printf("Criando arquivo indice\n");
+        inicializa(arq_indice, t);
+        fp_indice = fopen(arq_indice, "rb");
+        if(!fp_indice){
+          printf("Erro ao criar o arquivo indice\n");
+          exit(1);
+        }
     }
     //if(TARVBMT_Busca(arq_indice, novo_atlta.id, t)) return;
     
@@ -1053,7 +1098,7 @@ void insere(const char *arq_indice, TT novo_atleta, int t){ //adicionado paramet
 int main(void){
     TT tenista = TT_cria_vazio();
     int continua, t = 2;
-    Cria_indicesTeste();
+    //Cria_indicesTeste();
     //FILE *fp = fopen("INDICES.bin","wb");
     //fclose(fp);
     //scanf("%d",&continua);
