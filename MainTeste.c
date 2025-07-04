@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <locale.h>
+#include "TH_MS.h"
 
+/*
 typedef struct tenistas{
   //tenistas.txt
   int id, ano_nascimento, morte, rank, YoBK, numSem;
@@ -11,7 +13,7 @@ typedef struct tenistas{
   int pontuacao;
   int anoGanhouTodosGrands; //Q(5)
   int TorneiosGanhos[15];
-}TT;
+}TT;*/
 
 typedef struct nointerno{
   char rotulo[6];
@@ -116,7 +118,7 @@ void imprime(const char *arq_indice, int t){
 
 
 //teste para o imprime
-
+/*
 TT TT_cria_vazio(){
   TT novo;
   //tenistas.txt
@@ -133,7 +135,7 @@ TT TT_cria_vazio(){
   novo.anoGanhouTodosGrands=-1;
   for(int i = 0; i<15; i++) novo.TorneiosGanhos[i] = 0;
   return novo;
-}
+}*/
 
 NOFO* NOFO_cria(int t){
   NOFO *no = malloc(sizeof(NOFO));
@@ -999,7 +1001,7 @@ TT TT_completaInfoChampionsTxt(TT tenista){
         if(indicetorneios<=3) qtdGrandSlamNesseAno++;
 
         //!!HASH!! Inserir o caba na HASH DE VENCEDORES DE TORNEIO COM ANO ("TT.id", "TT.pontuacao" e "ano")
-        
+        //THV_insere(tenista.id,indicetorneios);
 
         if(qtdTitulosLidos == qtdTotTitulos) break;
       }
@@ -1012,7 +1014,9 @@ TT TT_completaInfoChampionsTxt(TT tenista){
     if(qtdGrandSlamNesseAno==4) tenista.anoGanhouTodosGrands = ano;
 
     //!!HASH!! Inserir o caba na HASH DE PONTUACAO POR ANO ("TT.id", "TT.pontuacao" e "ano")
-    
+    //THP_insere(tenista.id,tenista.pontuacao,ano);
+    adicionar_pontuacao(tenista.id,tenista.pontuacao,ano);
+
     if(qtdTotTitulos!=0 && qtdTitulosLidos == qtdTotTitulos) break;
   }
 
@@ -1030,10 +1034,11 @@ int posPaisEmVet(char *pais,char *vetPais[50]){
 void TARVBMT_criaPorTxt(int t){ //int t só usado para o insere (se o insere nao precisar tire o parametro dessa funcao)
   FILE *fp = fopen("tennis_players.txt","r");
   if(!fp) exit(1);
+  InicializaHashs();
   TT tenista;
   char *lido, linha[120], nome[51];
   int ano, campo, indPais=10, indCpf=100, semanatemp=-1;
-  int TTidPais,TTidCpf,TTidAno, tamvet = 60; //minimo com que funciona: 53
+  int TTidPais,TTidCpf,TTidAno, tamvet = 57; //minimo com que funciona: 53
   //char vetPais[50][51]; //50 paises de no maximo 51 caracteres
   char *vetPais[tamvet];
   for (int i = 0; i < tamvet; i++) {
@@ -1087,7 +1092,9 @@ void TARVBMT_criaPorTxt(int t){ //int t só usado para o insere (se o insere nao
     tenista = TT_completaInfoChampionsTxt(tenista);
 
     //!!HASH!! Inserir o caba na HASH DE NOME ("TT.id","TT.nome")
+    THNOM_insere(tenista.id,tenista.nome);
     //!!HASH!! Inserir o caba na HASH DE NACIONALIDADE ("TT.id","TT.pais")
+    THNAC_insere(tenista.id);
 
 
     insere("INDICES.bin",tenista, t);
@@ -1112,35 +1119,39 @@ int int_len(int num){
   }
   return count;
 }
-
-TT TARVBMT_busca(int id,int t){ //nao está funcionando corretamente -> PRESO EM LOOP
+/*
+TT TARVBMT_busca(int id,int t){ //funcionando corretamente
   FILE *fp = fopen("INDICES.bin","rb+");
-  if(!fp) exit(1);
-  char identfNo[6], filho[6];
+  if(!fp) return TT_cria_vazio(); //exit(1); com problemas no ubuntu
+  char identfNo[6], filho[6], temp[6];
   int numchaves,qtdLidos,i,pos,tamPorBloco = (sizeof(char)*6 + sizeof(int) + sizeof(int)*((2*t)-1) + (sizeof(char)*6)*(2*t));
-  int chave;//unsigned long int chave;
+  int chave;
   while(1){
     i=0;
     qtdLidos = fread(&identfNo,sizeof(char),6,fp);
     if(qtdLidos > 0){
       if(strncmp(identfNo,"N",1)==0){ //Se é um Nó
         fread(&numchaves,sizeof(int),1,fp);
-        fread(&chave,sizeof(int),1,fp);  //antes era long
+        fread(&chave,sizeof(int),1,fp); 
         while((i < numchaves-1) && (id >= chave)){
           i++;
-          fread(&chave,sizeof(int),1,fp); //antes era long
+          fread(&chave,sizeof(int),1,fp); 
         }
-        if(i==numchaves-1 && id>=chave) i++;
+        if(i==numchaves-1 && id>=chave){ //se é a ultima chave a ainda é maior, vai descer no filho + 1
+          i++;
+          fread(&chave,sizeof(int),1,fp); //lê o proximo para andar com o ponteiro tbb
+        }
         pos = ftell(fp);
         fseek(fp,pos+(sizeof(int) * (t-i)), SEEK_SET);//pula até o começo dos filhos
         pos = ftell(fp);
         fseek(fp,pos+((sizeof(char)*6)*i),SEEK_SET);
         fread(&filho,sizeof(char),6,fp);
-        if(filho[0]=='F'){//strncmp(filho,"F",1)==0//Se o filho for folha, o nome dele vai pra identfNo e sai do loop de procura
+        if(filho[0]=='F'){//Se o filho for folha, o nome dele vai pra identfNo e sai do loop de procura
           strcpy(identfNo,filho);
           break;
         }//caso contrario, se o filho ainda for Nó, vai para ele e repete o argoritmo(até achar uma folha)
-        strcpy(filho,&filho[1]); //Pega os os numeros do filho
+        strcpy(temp,&filho[1]); //Pega os os numeros do filho
+        strcpy(filho,temp);     //Uso do temp para evitar possiveis erros
         pos = atoi(filho) * tamPorBloco;//pos recebe o valor que iremos pular (ex: se quero ir para o nó N0001 vou pular 1 bloco)
         fseek(fp,pos,SEEK_SET);
       }
@@ -1164,9 +1175,11 @@ TT TARVBMT_busca(int id,int t){ //nao está funcionando corretamente -> PRESO EM
   if(qtdLidos<=0) return TT_cria_vazio(); //tenista erro
   return tenista;
 }
+  */
 
 void TARVBMT_libera(char *arq){ //nome deve vir como Indices.bin
   FILE *fp = fopen(arq,"rb+");
+  if(!fp) return;
   fseek(fp,0L,SEEK_END);
   int nfolhas,fim = ftell(fp) - sizeof(int);
   fseek(fp,fim,SEEK_SET);
@@ -1174,7 +1187,7 @@ void TARVBMT_libera(char *arq){ //nome deve vir como Indices.bin
   fclose(fp);
   remove(arq);
   //liberaHashs(); //Ainda deve ser implementada
-  char nome[51],string_i[6];
+  char nome[51],string_i[51]; //string_i[6] dando problema em alguns computadores
   for(int i = 0; i<nfolhas; i++){
     strcpy(nome,"./infos/F");
     for(int j = 0; j < 4 - int_len(i); j++) strcat(nome,"0");
@@ -1185,27 +1198,73 @@ void TARVBMT_libera(char *arq){ //nome deve vir como Indices.bin
   }
 }
 
-int main(void){
-    //setlocale(LC_ALL,"Portuguese_Brazil");
-    int t, id;
-    printf("Insira um t: ");
-    scanf("%d",&t);
-    TARVBMT_libera("INDICES.bin");
-    TARVBMT_criaPorTxt(t);
-    imprime("INDICES.bin",t);
+void TLSEid_imprime(TLSEid *lista,int t){
+  if(!lista) return;
+  TLSEid *aux = lista;
+  int i = 1;
+  while(aux){
+    printf("%d) %s\n",i,TARVBMT_busca(aux->id,t).nome);
+    aux = aux->prox;
+    i++;
+  }
+}
 
-    
-    printf("deseja buscar as informações de alguém? (se sim, por enquanto, insira o ID) (se nao digite -1)");
-    scanf("%d", &id);
-    while(id > 0){
-        TT tenista = TARVBMT_busca(id, t);
-        printf("tenista > %s\nNasceu em %d - %s\n",tenista.nome,tenista.ano_nascimento,tenista.pais);
-        if(tenista.morte != -1){
-            printf("Morreu em %d\n",tenista.morte);
-        }
-        printf("Fez %d pontos!\n\n",tenista.pontuacao);
-        printf("deseja buscar as informações de alguém? (se sim, por enquanto, insira o ID) (se nao digite -1)");
-        scanf("%d", &id);
+void ImprimeMenu(){
+  printf("\n-=-=-=MENU=-=-=-\n1  - Buscar por nome\n2  - Buscar ranking por ano\n-1 - Sair\n\nOpccao: ");
+}
+
+//Para compilar -> gcc MainTeste.c TH_MS.c TH_MS.h -o mainteste
+int main(void){
+  //setlocale(LC_ALL,"Portuguese_Brazil");
+  int t, opcao;
+  printf("Insira um t: ");
+  scanf("%d",&t);
+  TARVBMT_libera("INDICES.bin");
+  TARVBMT_criaPorTxt(t);
+  imprime("INDICES.bin",t);
+
+  /*
+  printf("deseja buscar as informações de alguém? (se sim, por enquanto, insira o ID) (se nao digite -1)");
+  scanf("%d", &id);
+  while(id > 0){
+      TT tenista = TARVBMT_busca(id, t);
+      printf("tenista > %s\nNasceu em %d - %s\n",tenista.nome,tenista.ano_nascimento,tenista.pais);
+      if(tenista.morte != -1){
+          printf("Morreu em %d\n",tenista.morte);
+      }
+      printf("Fez %d pontos!\n\n",tenista.pontuacao);
+      printf("deseja buscar as informações de alguém? (se sim, por enquanto, insira o ID) (se nao digite -1)");
+      scanf("%d", &id);
+  }
+  */
+
+  ImprimeMenu();
+  scanf("%d", &opcao);
+  while(opcao > 0){
+    if(opcao == 1){
+      char nome[51];
+      printf("Insira o nome completo: ");
+      scanf(" %[^\n]",nome);
+      TT tenista = THNOM_busca(nome, t);
+      printf("tenista > %s\nNasceu em %d - %s\n",tenista.nome,tenista.ano_nascimento,tenista.pais);
+      if(tenista.morte != -1){
+        printf("Morreu em %d\n",tenista.morte);
+      }
+      printf("Fez %d pontos!\n\n",tenista.pontuacao);
     }
+    else if(opcao == 2){
+      int ano;
+      TLSEid *lista;
+      printf("Insira o ano: ");
+      scanf("%d",&ano);
+      //lista = THP_busca_primeiros_ateh_N_Do_Ano(ano,25);//busca até 25 do ano
+      //TLSEid_imprime(lista,t);
+      imprimir_top_25(ano,t);
+    }
+    ImprimeMenu();
+    scanf("%d", &opcao);
+  }
+  
+
     
 }

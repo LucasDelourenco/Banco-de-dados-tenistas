@@ -13,6 +13,17 @@ typedef struct tenistas{
   //int anoVenceuGrands[35]; //(Q2) usar? vamos decidir depois
   int TorneiosGanhos[15];
 }TT;
+typedef struct nointerno{
+  char rotulo[6];
+  int nchaves;
+  int *vet_chaves;
+  char (*filhos)[6];
+} NOINT;
+typedef struct nofolha{
+  char rotulo[6];
+  TT *vet_tenista;
+  int num_info;
+} NOFO;
 typedef struct tlsetenistas{
   TT tenista;
   struct tlsetenistas *prox;
@@ -35,10 +46,6 @@ typedef struct arvbmtenistas{
     char* prox;             //caso seja folha, tem o ponteiro para o nome do próximo arquivo
 }TARVBMT;*/
 
-typedef struct listaDeTenistas{
-  TT tenista;
-  struct listaDeTenistas *prox;
-}TLSETT;
 
 int TT_num_titulos(TT tenista);
 TT TT_cria_vazio();

@@ -15,18 +15,7 @@ typedef struct tenistas{
 }TT;
 */
 
-typedef struct nointerno{
-  char rotulo[6];
-  int nchaves;
-  int *vet_chaves;
-  char (*filhos)[6];
-} NOINT;
 
-typedef struct nofolha{
-  char rotulo[6];
-  TT *vet_tenista;
-  int num_info;
-} NOFO;
 
 //para resolver Q1
 int TT_num_titulos(TT tenista){
@@ -240,8 +229,8 @@ void TARVBMT_libera(char *arq){ //nome deve vir como Indices.bin
   fread(&nfolhas,sizeof(int),1,fp);
   fclose(fp);
   remove(arq);
-  liberaHashs(); //Ainda deve ser implementada
-  char nome[51],string_i[6];
+  //liberaHashs(); //Ainda deve ser implementada
+  char nome[51],string_i[51]; //string_i[6] dando problema em alguns computadores
   for(int i = 0; i<nfolhas; i++){
     strcpy(nome,"./infos/F");
     for(int j = 0; j < 4 - int_len(i); j++) strcat(nome,"0");
@@ -253,34 +242,38 @@ void TARVBMT_libera(char *arq){ //nome deve vir como Indices.bin
 }
 
 //                 Indices   id   TdaArvore
-TT TARVBMT_busca(int id,int t){ //TBT (ToBeTested)
+TT TARVBMT_busca(int id,int t){ //nao está funcionando corretamente -> PRESO EM LOOP
   FILE *fp = fopen("INDICES.bin","rb+");
-  if(!fp) exit(1);
-  char identfNo[6], filho[6];
+  if(!fp) return; //exit(1); com problemas no ubuntu
+  char identfNo[6], filho[6], temp[6];
   int numchaves,qtdLidos,i,pos,tamPorBloco = (sizeof(char)*6 + sizeof(int) + sizeof(int)*((2*t)-1) + (sizeof(char)*6)*(2*t));
-  int chave;//unsigned long int chave;
+  int chave;
   while(1){
     i=0;
     qtdLidos = fread(&identfNo,sizeof(char),6,fp);
     if(qtdLidos > 0){
       if(strncmp(identfNo,"N",1)==0){ //Se é um Nó
         fread(&numchaves,sizeof(int),1,fp);
-        fread(&chave,sizeof(int),1,fp);  //antes era long
+        fread(&chave,sizeof(int),1,fp); 
         while((i < numchaves-1) && (id >= chave)){
           i++;
-          fread(&chave,sizeof(int),1,fp); //antes era long
+          fread(&chave,sizeof(int),1,fp); 
         }
-        if(i==numchaves-1 && id>=chave) i++;
+        if(i==numchaves-1 && id>=chave){ //se é a ultima chave a ainda é maior, vai descer no filho + 1
+          i++;
+          fread(&chave,sizeof(int),1,fp); //lê o proximo para andar com o ponteiro tbb
+        }
         pos = ftell(fp);
         fseek(fp,pos+(sizeof(int) * (t-i)), SEEK_SET);//pula até o começo dos filhos
         pos = ftell(fp);
         fseek(fp,pos+((sizeof(char)*6)*i),SEEK_SET);
         fread(&filho,sizeof(char),6,fp);
-        if(strncmp(&filho,"F",1)==0){//Se o filho for folha, o nome dele vai pra identfNo e sai do loop de procura
+        if(filho[0]=='F'){//Se o filho for folha, o nome dele vai pra identfNo e sai do loop de procura
           strcpy(identfNo,filho);
           break;
         }//caso contrario, se o filho ainda for Nó, vai para ele e repete o argoritmo(até achar uma folha)
-        strcpy(filho,&filho[1]); //Pega os os numeros do filho
+        strcpy(temp,&filho[1]); //Pega os os numeros do filho
+        strcpy(filho,temp);     //Uso do temp para evitar possiveis erros
         pos = atoi(filho) * tamPorBloco;//pos recebe o valor que iremos pular (ex: se quero ir para o nó N0001 vou pular 1 bloco)
         fseek(fp,pos,SEEK_SET);
       }
@@ -365,8 +358,8 @@ TARVBMT *divisao(TARVBMT *x, int i, TARVBMT* y, int t){
     }
   }
   else {
-    z->nchaves = t; //z possuir� uma chave a mais que y se for folha
-    for(j=0;j < t;j++) z->chave[j] = y->chave[j+t-1];//Caso em que y � folha, temos q passar a info para o n� da direita
+    z->nchaves = t; //z possuir  uma chave a mais que y se for folha
+    for(j=0;j < t;j++) z->chave[j] = y->chave[j+t-1];//Caso em que y   folha, temos q passar a info para o n  da direita
     z->prox = y->prox; //ultima revisao: 04/2020
     y->prox = z;
   }
@@ -515,7 +508,7 @@ TARVBMT* remover(TARVBMT* arv, int ch, int t){
           //TARVBMT_libera(z); 07/2024
         }
         TARVBMT_libera(z); // 07/2024
-        for(j=i; j < arv->nchaves-1; j++){ //limpar refer�ncias de i
+        for(j=i; j < arv->nchaves-1; j++){ //limpar refer ncias de i
           arv->chave[j] = arv->chave[j+1];
           arv->filho[j+1] = arv->filho[j+2];
         }
