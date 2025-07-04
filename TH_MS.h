@@ -27,7 +27,6 @@ typedef struct tenistas{
   int TorneiosGanhos[15];
 }TT;
 
-
 TT TT_cria_vazio();
 TT TARVBMT_busca(int id,int t);
 
