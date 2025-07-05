@@ -522,7 +522,7 @@ void divisao_MS(char *indice, int i, long pos_pai, long pos_dividido, int t){
   fread(x->filhos, sizeof(char), 2*t*6, f_indice); //Le os 2t filhos
 
   if (no == 'N'){ //Caso o dividido seja no interno
-    printf("Caso no interno\n");
+    //printf("Caso no interno\n");
     NOINT *y, *z;
 
     y = NOINT_cria(t);
@@ -557,7 +557,7 @@ void divisao_MS(char *indice, int i, long pos_pai, long pos_dividido, int t){
     NOINT_libera(z);
   }
   else if (no == 'F'){ //Caso o dividido seja folha
-    printf("Caso Folha\n");
+    //printf("Caso Folha\n");
     
     NOFO *y, *z;
 
@@ -669,7 +669,7 @@ void insere_na_folha(const char *arq_indice, const char *arq_folha, TT novo_atle
     int num_atletas = num_atletas_na_folha(fp);
     
     if(num_atletas >= (2 * t - 1)){
-        printf("\nFolha %s cheia. Chamando divisao...\n", arq_folha);
+        //printf("\nFolha %s cheia. Chamando divisao...\n", arq_folha);
         fclose(fp);
 
         // Calcula a posiaoo do ponteiro para a folha a ser dividida.
@@ -679,7 +679,7 @@ void insere_na_folha(const char *arq_indice, const char *arq_folha, TT novo_atle
         divisao_MS((char *)arq_indice, (i+1), pos_pai, pos_ponteiro_filho, t);
         
         // Apos a divisao, a arvore mudou. Reinicia o processo de insercaoo
-        printf("Divisao completa. Reinserindo atleta ID %d.\n", novo_atleta.id);
+        //printf("Divisao completa. Reinserindo atleta ID %d.\n", novo_atleta.id);
         insere(arq_indice, novo_atleta, t);
         return;
     }
@@ -715,7 +715,7 @@ void insere_na_folha(const char *arq_indice, const char *arq_folha, TT novo_atle
     remove(arq_folha);
     rename(arq_tmp, arq_folha);
 
-    printf("Atleta com ID %d inserido com sucesso em %s.\n", novo_atleta.id, arq_folha);
+    //printf("Atleta com ID %d inserido com sucesso em %s.\n", novo_atleta.id, arq_folha);
 }
 
 
@@ -854,7 +854,7 @@ void inicializa(const char *arq_indice, int t){
 void insere(const char *arq_indice, TT novo_atleta, int t){ //adicionado parametro int t
     FILE *fp_indice = fopen(arq_indice, "rb");
     if(!fp_indice) {
-        printf("Criando arquivo indice\n");
+        //printf("Criando arquivo indice\n");
         inicializa(arq_indice, t);
         fp_indice = fopen(arq_indice, "rb");
         if(!fp_indice){
@@ -921,11 +921,10 @@ void insere(const char *arq_indice, TT novo_atleta, int t){ //adicionado paramet
         
         
         if(nchaves_filho == (2 * t -1 )){
-            printf("No interno cheio, chamando divisao_MS");
+            //printf("No interno cheio, chamando divisao_MS");
             fclose(fp_indice);
-            divisao_MS((char *)arq_indice, (i+1), ptr_atual, ptr_filho, t); //PROGRAMA ESTÁ PARANDO AQU
+            divisao_MS((char *)arq_indice, (i+1), ptr_atual, ptr_filho, t); 
             fp_indice = fopen(arq_indice, "rb");
-            printf("CHEGOU\n");
             ptr_atual = 0L;
             continue;
         }else{ // Se nao estiver cheio, continuamos descendo
@@ -1096,9 +1095,10 @@ void TARVBMT_criaPorTxt(int t){ //int t só usado para o insere (se o insere nao
     //!!HASH!! Inserir o caba na HASH DE NACIONALIDADE ("TT.id","TT.pais")
     THNAC_insere(tenista.id);
 
-
     insere("INDICES.bin",tenista, t);
 
+    //printf para "carregando arvore . . . "
+    if(!(indCpf%100)) printf(" .");
 
     //printf para debug -> printa todos os jogadores com suas infos (quase todas infos)
     //printf("%s - %d: %d | %d | %s | %d | %d | %d | %d\n",tenista.nome,tenista.id,tenista.ano_nascimento,tenista.morte,tenista.pais,tenista.rank,tenista.YoBK,tenista.numSem,tenista.pontuacao);
@@ -1210,7 +1210,17 @@ void TLSEid_imprime(TLSEid *lista,int t){
 }
 
 void ImprimeMenu(){
-  printf("\n-=-=-=MENU=-=-=-\n1  - Buscar por nome\n2  - Buscar ranking por ano\n-1 - Sair\n\nOpccao: ");
+  printf(
+    "\n- - - - - - - - - - - MENU - - - - - - - - - - -\n\n"
+
+    " 1 - Imprimir árvore\n"
+    " 2 - Buscar por nome completo\n"
+    " 3 - Mostrar ordem e pontuacao caso não houvesse aposentados (Q3)\n"
+    " 4 - Mostrar ranking por ano (Q4)\n"
+    "-1 - Sair\n\n"
+
+    "Opccao: "
+  );
 }
 
 //Para compilar -> gcc MainTeste.c TH_MS.c TH_MS.h -o mainteste
@@ -1220,8 +1230,10 @@ int main(void){
   printf("Insira um t: ");
   scanf("%d",&t);
   TARVBMT_libera("INDICES.bin");
+  printf("\nInicializando estruturas");
   TARVBMT_criaPorTxt(t);
-  imprime("INDICES.bin",t);
+  printf("\n");
+  //imprime("INDICES.bin",t);
 
   /*
   printf("deseja buscar as informações de alguém? (se sim, por enquanto, insira o ID) (se nao digite -1)");
@@ -1241,26 +1253,47 @@ int main(void){
   ImprimeMenu();
   scanf("%d", &opcao);
   while(opcao > 0){
-    if(opcao == 1){
+    if(opcao == 1) imprime("INDICES.bin",t);
+    else if(opcao == 2){
       char nome[51];
       printf("Insira o nome completo: ");
       scanf(" %[^\n]",nome);
       TT tenista = THNOM_busca(nome, t);
-      printf("tenista > %s\nNasceu em %d - %s\n",tenista.nome,tenista.ano_nascimento,tenista.pais);
-      if(tenista.morte != -1){
-        printf("Morreu em %d\n",tenista.morte);
+      if(tenista.id == -1) printf("\nTenista não encontrado\nVerifique a grafica de '%s'\n\n",nome);
+      else{
+        printf("\nTenista : %s\nNasceu em %d - %s\n",tenista.nome,tenista.ano_nascimento,tenista.pais);
+        if(tenista.morte != -1){
+          printf("Morreu em %d\n",tenista.morte);
+        }
+        printf("Fez %d pontos!\n\n",tenista.pontuacao);
       }
-      printf("Fez %d pontos!\n\n",tenista.pontuacao);
     }
-    else if(opcao == 2){
-      int ano;
-      TLSEid *lista;
-      printf("Insira o ano: ");
-      scanf("%d",&ano);
-      //lista = THP_busca_primeiros_ateh_N_Do_Ano(ano,25);//busca até 25 do ano
-      //TLSEid_imprime(lista,t);
-      imprimir_top_25(ano,t);
+    else if(opcao == 3){
+      imprimir_top_N(2024,t,-10);//imprime até, no max, 25
     }
+    else if(opcao == 4){
+      int subopcao;
+      printf("%d  >    .\n\t1 - Inserir um ano\n\t2 - Mostrar todos os anos\n\n\tOpccao: ",opcao);
+      scanf("%d",&subopcao);
+      if(subopcao == 1){
+        int ano;
+        printf("Insira o ano: ");
+        scanf("%d",&ano);
+        imprimir_top_N(ano,t,25);//imprime até, no max, 25
+        //TLSEid *lista;
+        //lista = THP_busca_primeiros_ateh_N_Do_Ano(ano,25);//busca até 25 do ano
+        //TLSEid_imprime(lista,t);
+      }
+      else if(subopcao == 2){
+        for(int i = 1990; i<=2024; i++)imprimir_top_N(i,t,25); //funcionando em wsl mas nao em windows Testar no mint
+      }else{
+        printf("\nInsira um valor válido\n\n");
+      }
+    }
+    
+    
+    
+    else printf("Opção inválida\n");
     ImprimeMenu();
     scanf("%d", &opcao);
   }

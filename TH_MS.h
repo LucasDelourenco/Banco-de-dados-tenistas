@@ -64,7 +64,7 @@ TLSEid *TLSEid_insere_inic(TLSEid *l, int id);
 TLSEid *TLSEid_insere_fim(TLSEid *l, int id);
 
 void adicionar_pontuacao(int id, int pontuacao_nova, int ano_evento);
-void imprimir_top_25(int ano, int t);
+void imprimir_top_N(int ano, int t, int N);
 
 
 
