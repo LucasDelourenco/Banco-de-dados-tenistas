@@ -67,6 +67,7 @@ TT TARVBMT_busca(int id,int t){ //funcionando corretamente
     }
     else{
       printf("\nIdentificacao do No nao encontrado(verificar TARVBMT_buscar  )\n");// PRINT DEBUG APAGAR FUTURAMENTE!!
+      fclose(fp);
       return TT_cria_vazio(); //tenista erro
     }
   }
@@ -79,6 +80,7 @@ TT TARVBMT_busca(int id,int t){ //funcionando corretamente
   fp = fopen(arqFolha,"rb+");
   qtdLidos = fread(&tenista,sizeof(TT),1,fp);
   while((qtdLidos>0) && (tenista.id != id)) qtdLidos = fread(&tenista,sizeof(TT),1,fp);
+  fclose(fp);
   if(qtdLidos<=0) return TT_cria_vazio(); //tenista erro
   return tenista;
 }
@@ -310,6 +312,12 @@ void imprimir_top_N(int ano, int t, int N) {
     FILE* fp_ids = fopen("./auxiliares/idMap.bin", "rb");
     if (!fp_ids) return;
     int* id_map = (int*) malloc(caracs.capacidade * sizeof(int)); //vetor dos ids
+    if (id_map == NULL) {
+    perror("Falha ao alocar memoria para id_map");
+    // Você pode querer fechar outros arquivos abertos aqui antes de retornar
+    return;
+    }
+
     fread(id_map, sizeof(int), caracs.capacidade, fp_ids);
     fclose(fp_ids);
 
@@ -321,6 +329,12 @@ void imprimir_top_N(int ano, int t, int N) {
     
     //lendo pontuacao do ano e colocando num vetor para ordenar
     MatTenista* ranking_ano = (MatTenista*) malloc(caracs.capacidade * sizeof(MatTenista));
+    if (ranking_ano == NULL) {
+      perror("Falha ao alocar memoria para ranking_ano");
+      free(id_map); // Libera o que já foi alocado
+      fclose(fp_ptos); // Fecha o arquivo aberto
+      return;
+    }
     int indice_ano = ano - 1990;
     for (int i = 0; i < caracs.capacidade; i++) {
         //se id == 0 o espaço está vazio
@@ -360,6 +374,7 @@ void imprimir_top_N(int ano, int t, int N) {
         if (ignorarVazios && (ranking_ano[i].id == 0 || ranking_ano[i].pontuacao == 0)) {
             continue;
         }
+
         printf("%3d) %s - Pontuacao: %d\n", count_impressos + 1, TARVBMT_busca(ranking_ano[i].id, t).nome,ranking_ano[i].pontuacao);
         count_impressos++;
     }
@@ -477,6 +492,20 @@ TLSEid *TLSEid_insere_fim(TLSEid *l, int id){
   return l;
 }
 
+TLSEvl *TLSEvl_insere_inic(TLSEvl *l, int id, int *anos){
+  TLSEvl *novo = (TLSEvl *) malloc(sizeof(TLSEvl));
+  novo->prox = l;
+  novo->id = id;
+  for(int i = 0; i<35; i++) novo->anos[i] = anos[i];
+  return novo;
+}
+
+TLSEvl *TLSEvl_insere_fim(TLSEvl *l, int id, int *anos){
+  if(!l) return TLSEvl_insere_inic(NULL,id,anos);
+  l->prox = TLSEvl_insere_fim(l->prox,id,anos);
+  return l;
+}
+
 //     //LEMBRAR DE LIBERAR!!!!
 // TLSEid *THP_busca_primeiros_ateh_N_Do_Ano(int ano, int qtd_n){ //Q4 e Q3 //Funcionando!
 //   FILE *fp = fopen("./hashs/THP.bin","rb");
@@ -538,7 +567,7 @@ TT THNOM_busca(char nome[51],int t){ //Ou ponteiro para poder retornar NULL
     fread(&aux, sizeof(THT), 1, fp);
   }
 }
-TLSEid *THV_busca_lista_torneio(int indiceTorneio){
+TLSEvl *THV_busca_lista_torneio(int indiceTorneio){
   FILE *fp = fopen("./hashs/THV.bin","rb");
   if(!fp)exit(1);
   int pos, h = THV_hash(indiceTorneio);
@@ -549,17 +578,17 @@ TLSEid *THV_busca_lista_torneio(int indiceTorneio){
   fp = fopen("./hashs/THV_dados.bin","rb");
   if(!fp) exit(1);
   fseek(fp, pos, SEEK_SET);
-  THT aux;
-  TLSEid *lista = NULL;
-  fread(&aux, sizeof(THT), 1, fp);
+  THVl aux;
+  TLSEvl *lista = NULL;
+  fread(&aux, sizeof(THVl), 1, fp);
   while(1){
-    if(aux.status)lista = TLSEid_insere_fim(lista, aux.id);
+    if(aux.status)lista = TLSEvl_insere_fim(lista, aux.id, aux.anos);
     if(aux.prox == -1){
       fclose(fp);
       return lista;
     }
     fseek(fp, aux.prox, SEEK_SET);
-    fread(&aux, sizeof(THT), 1, fp);
+    fread(&aux, sizeof(THVl), 1, fp);
   }
 }
 //Printar o arquivo de paises e pedir para o usuario escolher por numero
@@ -1025,7 +1054,17 @@ void THNOM_insere(int id, char nome[51]){
   fclose(fp);
   fclose(fph);
 }
-void THV_insere(int id, int indiceTorneios){
+
+void insere_ult_pos_vet(int *anos, int ano){
+  for(int i = 0; i < 35; i++){
+    if(anos[i]==0){//se é a prim pos vazia
+      anos[i] = ano;
+      return anos;
+    }
+    if(anos[i]==ano) return anos; //se ja tem esse ano, nao insere
+  }
+}
+void THV_insere(int id, int indiceTorneios, int ano){
   FILE *fph = fopen("./hashs/THV.bin", "rb+");
   if(!fph) exit(1);
   int pos, h = THV_hash(indiceTorneios);
@@ -1038,14 +1077,15 @@ void THV_insere(int id, int indiceTorneios){
     fclose(fph);
     exit(1);
   }
-  THT aux;
+  THVl aux;
   while(pos != -1){
     fseek(fp, pos, SEEK_SET);
-    fread(&aux, sizeof(THT), 1, fp);
+    fread(&aux, sizeof(THVl), 1, fp);
     if(aux.id == id){
       aux.status = 1;
+      insere_ult_pos_vet(aux.anos,ano);
       fseek(fp, pos, SEEK_SET);
-      fwrite(&aux, sizeof(THT), 1, fp);
+      fwrite(&aux, sizeof(THVl), 1, fp);
       fclose(fp);
       fclose(fph);
       return;
@@ -1056,17 +1096,18 @@ void THV_insere(int id, int indiceTorneios){
   }
   if(prim_pos_livre == -1){
     aux.id = id;
+    insere_ult_pos_vet(aux.anos,ano);
     aux.prox = -1;
     aux.status = 1;
     fseek(fp, 0L, SEEK_END);
     pos = ftell(fp);
-    fwrite(&aux, sizeof(THT), 1, fp);
+    fwrite(&aux, sizeof(THVl), 1, fp);
     if(ant != -1){
       fseek(fp, ant, SEEK_SET);
-      fread(&aux, sizeof(THT), 1, fp);
+      fread(&aux, sizeof(THVl), 1, fp);
       aux.prox = pos;
       fseek(fp, ant, SEEK_SET);
-      fwrite(&aux, sizeof(THT), 1, fp);
+      fwrite(&aux, sizeof(THVl), 1, fp);
     }
     else{
       fseek(fph, h*sizeof(int), SEEK_SET);
@@ -1077,11 +1118,12 @@ void THV_insere(int id, int indiceTorneios){
     return;
   }
   fseek(fp, prim_pos_livre, SEEK_SET);
-  fread(&aux, sizeof(THT), 1, fp);
+  fread(&aux, sizeof(THVl), 1, fp);
   aux.id = id;
+  insere_ult_pos_vet(aux.anos,ano);
   aux.status = 1;
   fseek(fp, prim_pos_livre, SEEK_SET);
-  fwrite(&aux, sizeof(THT), 1, fp);
+  fwrite(&aux, sizeof(THVl), 1, fp);
   fclose(fp);
   fclose(fph);
 }

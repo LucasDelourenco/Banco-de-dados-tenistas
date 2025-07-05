@@ -4,14 +4,17 @@
 
 typedef struct linhaHashRankingPorAno{ //tipo 0
   int id, prox, status, pontuacao; //pontuacao usada só para ordem na hash, nao como informacao buscável!!!!
-}THTpts;/*
-typedef struct linhaHashVencedoresDeTorneiosComAno{ //tipo 1
-  int id, ano, qtdNoAno;
-  struct linhaHashVencedoresDeTorneiosComAno *prox;
-}THVl;*/
+}THTpts;
 typedef struct linhaHashTenistas{ 
   int id, prox, status;
 }THT; //Thid
+typedef struct linhaHashTenistasVencedores{ 
+  int id, anos[35], prox, status;
+}THVl; 
+typedef struct listaEncadeadathvl{
+  int id, anos[35];
+  struct listaEncadeadathvl *prox;
+}TLSEvl;
 typedef struct listaEncadeadatht{
   int id;
   struct listaEncadeadatht *prox;
@@ -41,13 +44,13 @@ void InicializaHashs();
 
 //void THP_insere(int id, int pontuacao, int ano);
 void THNOM_insere(int id, char nome[51]);
-void THV_insere(int id, int indiceTorneios);
+void THV_insere(int id, int indiceTorneios, int ano);
 void THNAC_insere(int id);
 void THVT_insere(int id, int indiceTorneios);
 
 //TLSEid *THP_busca_primeiros_ateh_N_Do_Ano(int ano, int qtd_n);
 TT THNOM_busca(char nome[51],int t);
-TLSEid *THV_busca_lista_torneio(int indiceTorneio);
+TLSEvl *THV_busca_lista_torneio(int indiceTorneio);
 TLSEid *THNAC_busca(int indice_paises_no_arq);
 TLSEid *THVT_busca(int indiceTorneios);
 
@@ -65,6 +68,8 @@ TLSEid *TLSEid_insere_fim(TLSEid *l, int id);
 
 void adicionar_pontuacao(int id, int pontuacao_nova, int ano_evento);
 void imprimir_top_N(int ano, int t, int N);
+void processar_todos_os_rankings(int t);
+void imprimir_top_N_ALT(int ano, int t, int N, int capacidade, int jogadores_registrados, const int* id_map, const int* matriz_pontos);
 
 
 

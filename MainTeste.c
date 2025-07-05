@@ -1262,6 +1262,8 @@ int main(void){
       if(tenista.id == -1) printf("\nTenista não encontrado\nVerifique a grafica de '%s'\n\n",nome);
       else{
         printf("\nTenista : %s\nNasceu em %d - %s\n",tenista.nome,tenista.ano_nascimento,tenista.pais);
+        if(2025 - tenista.ano_nascimento >= 35)printf("Está aposentado\n");
+        else printf("Está ativo\n");
         if(tenista.morte != -1){
           printf("Morreu em %d\n",tenista.morte);
         }
@@ -1285,7 +1287,7 @@ int main(void){
         //TLSEid_imprime(lista,t);
       }
       else if(subopcao == 2){
-        for(int i = 1990; i<=2024; i++)imprimir_top_N(i,t,25); //funcionando em wsl mas nao em windows Testar no mint
+        for(int i = 1990; i<=2024; i++)imprimir_top_N(i,t,25);
       }else{
         printf("\nInsira um valor válido\n\n");
       }
