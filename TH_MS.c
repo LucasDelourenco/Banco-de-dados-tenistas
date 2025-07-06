@@ -49,7 +49,7 @@ TT TARVBMT_busca(int id,int t){ //funcionando corretamente
           fread(&chave,sizeof(int),1,fp); //lê o proximo para andar com o ponteiro tbb
         }
         pos = ftell(fp);
-        fseek(fp,pos+(sizeof(int) * (t-i)), SEEK_SET);//pula até o começo dos filhos
+        fseek(fp,pos+(sizeof(int) * (2*t -2 -i)), SEEK_SET);//pula até o começo dos filhos
         pos = ftell(fp);
         fseek(fp,pos+((sizeof(char)*6)*i),SEEK_SET);
         fread(&filho,sizeof(char),6,fp);
@@ -1059,9 +1059,9 @@ void insere_ult_pos_vet(int *anos, int ano){
   for(int i = 0; i < 35; i++){
     if(anos[i]==0){//se é a prim pos vazia
       anos[i] = ano;
-      return anos;
+      return;
     }
-    if(anos[i]==ano) return anos; //se ja tem esse ano, nao insere
+    if(anos[i]==ano) return; //se ja tem esse ano, nao insere
   }
 }
 void THV_insere(int id, int indiceTorneios, int ano){
@@ -1248,7 +1248,23 @@ void THVT_insere(int id, int indiceTorneios){
   fclose(fph);
 }
 
+void TLSEvl_libera(TLSEvl *l) {
+    TLSEvl *p = l, *temp;
+    while(p != NULL) {
+        temp = p;
+        p = p->prox;
+        free(temp);
+    }
+}
 
+void TLSEid_libera(TLSEid *l) {
+    TLSEid *p = l, *temp;
+    while(p != NULL) {
+        temp = p;
+        p = p->prox;
+        free(temp);
+    }
+}
 
 
 // void THP_imprime(){
@@ -1274,5 +1290,4 @@ void THVT_insere(int id, int indiceTorneios){
 //   }
 //   fclose(fp);
 // }
-
 
