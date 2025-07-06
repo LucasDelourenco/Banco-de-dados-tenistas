@@ -2337,7 +2337,7 @@ void ImprimeMenu(){
     " 5 - Mostrar tenistas que nasceneram no ano em que outro com ranking venceu um GrandSlam (Q2)\n"
     "-1 - Sair\n\n"
 
-    "Opccao: "
+    "Opccao: " 
   );
 }
 
