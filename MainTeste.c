@@ -246,17 +246,30 @@ int diminui_um(char *nome_ent, char *destino) {
 
     return 1;
 }
-
-long buscar_pos_no_int(char nome_no[6], int t){
+long buscar_pos_no_int(char *nome_no, int t){
+    if (!nome_no){
+      printf("ERRO em buscar_pos_no_int: nome_no nao existe!\n");
+      return -1;
+    }
+    if (nome_no[0] != 'N'){
+      printf("ERRO em buscar_pos_no_int: nome_no nao eh um no interno!\n");
+      return -1;
+    }
     char aux[10];
     int N, tamPorBloco;
     tamPorBloco = (sizeof(char)*6 + sizeof(int) + sizeof(int)*((2*t)-1) + (sizeof(char)*6)*(2*t));
-    strcpy(aux, &nome_no[1]);
-    N = atoi(aux);
+    N = atoi(&nome_no[1]);
     return tamPorBloco * N;
 }
 
-long buscar_pos_no_folha(FILE *f_indice, char nome_no[6], int chave, int t){
+long buscar_pos_no_folha(FILE *f_indice, char *nome_no, int chave, int t){
+    if (!nome_no){
+      printf("ERRO em buscar_pos_no_folha: nome_no nao existe!\n");
+      return -1;
+    }
+    if (nome_no[0] != 'F'){
+      printf("ERRO em buscar_pos_no_folha: nome_no nao eh uma folha\n");
+    }
     fseek(f_indice, 0L, SEEK_SET);
     int i;
     char filho_atual[6];
@@ -290,10 +303,17 @@ long buscar_pos_no_folha(FILE *f_indice, char nome_no[6], int chave, int t){
     return -1;
 }
 
-long buscar_pos_no(FILE *f_indice, char nome_no[6], int t){
+long buscar_pos_no(FILE *f_indice, char *nome_no, int t){
   char aux[20];
   
   fseek(f_indice, 0L, SEEK_END); 
+  if (!nome_no){
+    printf("ERRO em buscar_pos_no: nome_no está NULL!\n");
+    return -1;
+  }
+  if (nome_no[0] != 'N' && nome_no[0] != 'F'){
+    printf("ERRO em buscar_pos_no: nome_no nao eh um no interno ou folha\n");
+  }
   if (nome_no[0] == 'N'){  //Se for no interno pula direto pro nó desejado
     return buscar_pos_no_int(nome_no, t);
   }
@@ -316,7 +336,6 @@ long buscar_pos_no(FILE *f_indice, char nome_no[6], int t){
 
   return -1; //O parametro passado está errado, esperava: "Nxxxx\0" ou "Fxxxx\0"
 }
-
 
 void escreve_no(FILE *file, NOINT *no, int t){
   fwrite(no->rotulo, sizeof(char), 6, file);
