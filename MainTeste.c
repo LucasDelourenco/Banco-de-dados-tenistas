@@ -2424,13 +2424,14 @@ void Q5(int t){
   }
   printf("\n=== Jogadores que ganharam todos os GrandSlams ===\n");
   int i = 0;
-  while(lista){
-    TT tenista = TARVBMT_busca(lista->id,t);
+  TLSEid *aux = lista;
+  while(aux){
+    TT tenista = TARVBMT_busca(aux->id,t);
     if(tenista.anoGanhouTodosGrands!=-1){
       i++;
       printf("%d) %s -- %d",i,tenista.nome,tenista.anoGanhouTodosGrands);
     }
-    lista = lista->prox;
+    aux = aux->prox;
   }
   if(i==0) printf("\n..Nenhum jogador ganhou todos os GrandSlams..\n");
   TLSEid_libera(lista);
@@ -2684,7 +2685,7 @@ int main(void){
       scanf("%d",&subopcao);
       printf("\n%d  >    %d  >    .\n\t\t1 - Ativos e Aposentados (extra)\n\t\t2 - Apenas Ativos\n\n\t\tOpccao: ",opcao,subopcao);
       scanf("%d",&subopcao2);
-      if(subopcao2<1 || subopcao2 > 2) subopcao2 == 2;
+      if(subopcao2<1 || subopcao2 > 2) subopcao2 = 2;
       if(subopcao == 1){
         int ano;
         printf("Insira o ano: ");

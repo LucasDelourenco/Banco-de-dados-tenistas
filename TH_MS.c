@@ -492,7 +492,7 @@ void InicializaHashs(){
 
 
 TLSEid *TLSEid_insere_inic(TLSEid *l, int id){
-  TLSEid *novo = (TLSEid *) malloc(sizeof(TLSEid));
+  TLSEid *novo = (TLSEid *)malloc(sizeof(TLSEid));
   novo->prox = l;
   novo->id = id;
   return novo;
