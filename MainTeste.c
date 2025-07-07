@@ -1021,7 +1021,7 @@ TT TT_completaInfoChampionsTxt(TT tenista){
         if(indicetorneios<=3) qtdGrandSlamNesseAno++;
 
         //!!HASH!! Inserir o caba na HASH DE VENCEDORES DE TORNEIO COM ANO ("TT.id", "TT.pontuacao" e "ano")
-        THV_insere(tenista.id,indicetorneios,ano);
+        THV_insere(tenista.id,indicetorneios,ano); //ABORTADA
         THVT_insere(tenista.id,indicetorneios);
 
         if(qtdTitulosLidos == qtdTotTitulos) break;
@@ -1051,7 +1051,7 @@ int posPaisEmVet(char *pais,char *vetPais[50]){
 }
 //durante a coleta de infos, jogar nas hashs
 
-//Lê o(s) txt(s), monta o ID e ja manda insere na arvore direto (Cria a arvore no começo do programa)
+//le o(s) txt(s), monta o ID e ja manda insere na arvore direto (Cria a arvore no começo do programa)
 void TARVBMT_criaPorTxt(int t){ //int t só usado para o insere (se o insere nao precisar tire o parametro dessa funcao)
   FILE *fp = fopen("tennis_players.txt","r");
   if(!fp) exit(1);
@@ -1059,7 +1059,7 @@ void TARVBMT_criaPorTxt(int t){ //int t só usado para o insere (se o insere nao
   TT tenista;
   char *lido, linha[120], nome[51];
   int ano, campo, indPais=10, indCpf=100, semanatemp=-1;
-  int TTidPais,TTidCpf,TTidAno, tamvet = 57; //minimo com que funciona: 53
+  int TTidPais,TTidCpf,TTidAno, tamvet = 50; 
   //char vetPais[50][51]; //50 paises de no maximo 51 caracteres
   char *vetPais[tamvet];
   for (int i = 0; i < tamvet; i++) {
@@ -1128,6 +1128,7 @@ void TARVBMT_criaPorTxt(int t){ //int t só usado para o insere (se o insere nao
   }
 
   fclose(fp);
+  cria_arq_paises(vetPais);
   for (int i = 0; i < tamvet; i++) { //liberando o vetor de paises
       free(vetPais[i]);
   }
@@ -1894,24 +1895,14 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                                 continue;
                             }
                             else {
-                                if (num_no < num_z){
-                                    if (no->filhos[0][0] == 'N'){
-                                        for (j=0; j<= no->nchaves; j++){
-                                            if (atoi(&no->filhos[j][1]) > num_z) diminui_um(no->filhos[j], no->filhos[j]);
-                                        }
-                                    }
-                                    escreve_no_arv(ftmp, no, t);
-                                }
-                                else if (num_no > num_z){
-                                    diminui_um(no->rotulo, no->rotulo);
+                                if (num_no > num_z) diminui_um(no->rotulo, no->rotulo);
 
-                                    if (no->filhos[0][0] == 'N'){
-                                        for (j=0; j<= no->nchaves; j++){
-                                            if (atoi(&no->filhos[j][1]) > num_z) diminui_um(no->filhos[j], no->filhos[j]);
-                                        }
+                                if (no->filhos[0][0] == 'N'){
+                                    for (j=0; j<= no->nchaves; j++){
+                                        if (atoi(&no->filhos[j][1]) > num_z) diminui_um(no->filhos[j], no->filhos[j]);
                                     }
-                                    escreve_no_arv(ftmp, no, t);
                                 }
+                                escreve_no_arv(ftmp, no, t);
                             }
                             ponteiro = ftell(f_ind);
                         }
@@ -1930,7 +1921,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         rename("tmp.bin", arq_indice);
                     }
 
-                    else if (y->rotulo[0] == 'F'){
+                    else if (y->rotulo[0] == 'F'){  //Pode estar dando MERDA!
                         //Diminuir um das folhas de x
                         int nfolhas=0, folha_nome_errado=0;
                         char aux2[20];
@@ -2190,7 +2181,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                             num_no = atoi(&no->rotulo[1]);
                             
                             if (num_no == num_x){
-                                if (num_x >= num_z) diminui_um(x->rotulo, x->rotulo);
+                                if (num_x >= num_y) diminui_um(x->rotulo, x->rotulo);
 
                                 for (j=0; j<= x->nchaves; j++){
                                     if (atoi(&(x->filhos[j])[1]) >= num_y) diminui_um(x->filhos[j], x->filhos[j]);
@@ -2211,24 +2202,16 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                                 continue;
                             }
                             else {
-                                if (num_no < num_y){
-                                    if (no->filhos[0][0] == 'N'){
-                                        for (j=0; j<= no->nchaves; j++){
-                                            if (atoi(&no->filhos[j][1]) > num_y) diminui_um(no->filhos[j], no->filhos[j]);
-                                        }
-                                    }
-                                    escreve_no_arv(ftmp, no, t);
-                                }
-                                else if (num_no > num_y){
-                                    diminui_um(no->rotulo, no->rotulo);
+                                if (num_no > num_y) diminui_um(no->rotulo, no->rotulo);
 
-                                    if (no->filhos[0][0] == 'N'){
-                                        for (j=0; j<= no->nchaves; j++){
-                                            if (atoi(&no->filhos[j][1]) > num_y) diminui_um(no->filhos[j], no->filhos[j]);
-                                        }
+                                if (no->filhos[0][0] == 'N'){
+                                    for (j=0; j<= no->nchaves; j++){
+                                        if (atoi(&no->filhos[j][1]) > num_y) diminui_um(no->filhos[j], no->filhos[j]);
                                     }
-                                    escreve_no_arv(ftmp, no, t);
                                 }
+
+                                escreve_no_arv(ftmp, no, t);
+                                
                             }
                             ponteiro = ftell(f_ind);
                         }
@@ -2322,6 +2305,8 @@ void remover(char *arq_indice, long pos_no, int id, int t){
     if (pont_aux != -1) remover(arq_indice, pont_aux, id, t);
     return;
 }
+
+
 
 void retira(char *arq_indice, int id, int t){
     FILE *f_ind = fopen(arq_indice, "rb");
@@ -2496,6 +2481,52 @@ void Q9(int t) {
     }
 }
 
+void Q5(int t){
+  int tam;
+  TLSEid *lista = THVT_busca(0,&tam);
+  if(!lista){
+    printf("\n..Nenhum jogador ganhou todos os GrandSlams..\n");
+    TLSEid_libera(lista);
+    return;
+  }
+  printf("\n=== Jogadores que ganharam todos os GrandSlams ===\n");
+  int i = 0;
+  while(lista){
+    TT tenista = TARVBMT_busca(lista->id,t);
+    if(tenista.anoGanhouTodosGrands!=-1){
+      i++;
+      printf("%d) %s -- %d",i,tenista.nome,tenista.anoGanhouTodosGrands);
+    }
+    lista = lista->prox;
+  }
+  if(i==0) printf("\n..Nenhum jogador ganhou todos os GrandSlams..\n");
+  TLSEid_libera(lista);
+}
+
+void Q7(int t){
+  FILE *fp = fopen("./auxiliares/paises.bin","rb+");
+  if(!fp) exit(1);
+  int fr, idpais, i=0;
+  char *fd;
+  fr = fread(fd,sizeof(char),51,fp);
+  printf("\nEscolha o país\n8    >   .\n");
+  while(fr>0){
+    i++;
+    printf("\t(%d) - %s\n", i,fd);
+    fr = fread(fd,sizeof(char),51,fp);
+  }
+  fclose(fp);
+  printf("\n\tOpccao: ");
+  scanf("%d",&idpais);
+  idpais--;
+  TLSEid *lista = THNAC_busca(idpais);
+  while(lista){
+    if(lista->id > 0) retira("INDICES.bin",lista->id,t);
+    lista = lista->prox;
+  }
+  TLSEid_libera(lista);
+}
+
 MatTenista* ler_ranking_do_ano(int ano, int *capacidade_total) {
     // Abre e lê as características da matriz (capacidade e número de jogadores)
     MatCarac caracs;
@@ -2597,7 +2628,7 @@ void Q6(int indice_torneio, const char* nome_categoria, int t) {
 
             if (!jogador_esta_no_top(vencedor_atual->id, top_25_ids, 25)) {
                 TT dados_vencedor = TARVBMT_busca(vencedor_atual->id, t);
-                if(strncmp(dados_vencedor.nome,"",1)!= 0) printf("   %s venceu em %d e furou o rank  .\n", dados_vencedor.nome, ano_vitoria); //se saiu da hash THV está com nome vazio
+                printf("   %s venceu em %d e furou o rank  .\n", dados_vencedor.nome, ano_vitoria);
                 resp = 1;
             }
             
@@ -2613,7 +2644,36 @@ void Q6(int indice_torneio, const char* nome_categoria, int t) {
     TLSEvl_libera(lista_vencedores); 
 }
 
+void ImprimirJogadoresPorPais(int t){
+  FILE *fp = fopen("./auxiliares/paises.bin","rb+");
+  if(!fp) exit(1);
+  int fr, idpais, i=0;
+  char *fd;
+  fr = fread(fd,sizeof(char),51,fp);
+  printf("\nEscolha o país\n9    >   .\n");
+  while(fr>0){
+    i++;
+    printf("\t(%d) - %s\n", i,fd);
+    fr = fread(fd,sizeof(char),51,fp);
+  }
+  fclose(fp);
+  printf("\n\tOpccao: ");
+  scanf("%d",&idpais);
+  idpais--;
+  i =0;
+  TLSEid *lista = THNAC_busca(idpais);
+  while(lista){
+    i++;
+    if(lista->id > 0) printf("%d) %s - ID:%d",i,TARVBMT_busca(lista->id,t).nome,lista->id);
+    lista = lista->prox;
+    printf("%d ",i);
+  }
+  TLSEid_libera(lista);
+}
 
+// Sebastian Korda
+// Mark Philippoussis
+// Andre Agassi
 void ImprimeMenu(){
   printf(
     "\n- - - - - - - - - - - MENU - - - - - - - - - - -\n\n"
@@ -2626,6 +2686,9 @@ void ImprimeMenu(){
     " 5 - Mostrar tenistas que nasceneram no ano em que outro com ranking venceu um GrandSlam (Q2)\n"
     " 6 - Analisar jogadores que 'furaram' o ranking (Q6)\n" 
     " 7 - Vencedores por torneio (Q9)\n"
+    " 8 - Retirar jogadores de um Pais\n"
+    " 9 - Imprimir jogadores por Pais\n"
+    " 10 - Jogadores que ganharam todos os GrandSlams no mesmo ano (Q5)\n"
     "-1 - Sair\n\n"
 
     "Opccao: " 
@@ -2634,7 +2697,6 @@ void ImprimeMenu(){
 
 //Para compilar -> gcc MainTeste.c TH_MS.c TH_MS.h -o mainteste
 int main(void){
-  //setlocale(LC_ALL,"Portuguese_Brazil");
   int t, opcao;
   printf("Insira um t: ");
   scanf("%d",&t);
@@ -2655,8 +2717,8 @@ int main(void){
       scanf(" %[^\n]",nome);
       TT tenista = THNOM_busca(nome, t);
       if(tenista.id > 0){
-        retira_hashs(tenista.id,tenista.nome);
-        remover("INDICES.bin",0L,tenista.id,t);
+        //retira_hashs(tenista.id,tenista.nome);
+        retira("INDICES.bin",tenista.id,t);
       }
     }
     else if(opcao == 2){
@@ -2703,14 +2765,24 @@ int main(void){
     else if(opcao == 6) {
       printf("\nExecutando análise completa de quem 'furou' o ranking...\n");
       Q6(0, "Grand Slams", t);
-      Q6(3, "ATP 1000", t);
-      Q6(1, "ATP Finals", t);
-      Q6(2, "Olimpíadas", t);
+      Q6(6, "ATP 1000", t);
+      Q6(4, "ATP Finals", t);
+      Q6(5, "Olimpíadas", t);
+      
     }
     else if(opcao == 7){
       Q9(t);
     }
-    
+    else if(opcao == 8){
+      Q7(t);
+    }
+    else if(opcao == 9){
+      ImprimirJogadoresPorPais(t);
+    }
+    else if(opcao == 10){
+      Q5(t);
+    }
+
     else printf("Opção inválida\n");
     ImprimeMenu();
     scanf("%d", &opcao);

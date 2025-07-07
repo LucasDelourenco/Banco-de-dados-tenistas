@@ -82,7 +82,7 @@ Brett Steven\1969\-\New Zealand\-\-
 Cédric Pioline\1969\-\France\-\-
 Guillermo Pérez Roldán\1969\-\Argentina\13\1988
 Alberto Mancini\1969\-\Argentina\8\1989
-Arnaud Boetsch\1969\-\ France\12\1996
+Arnaud Boetsch\1969\-\France\12\1996
 Byron Black\1969\-\Zimbabwe\22\1996
 Jason Stoltenberg\1970\-\Australia\19\1994
 Jan Siemerink\1970\-\Netherlands\14\1998
@@ -146,7 +146,7 @@ Carlos Moyá\1976\-\Spain\1\1999 (2)
 Nicolás Lapentti\1976\-\Ecuador\6\1999
 Gustavo Kuerten\1976\-\Brazil\1\2000 (43)
 Nicolas Escudé\1976\-\France\17\2000
-Agustín Calleri\1976\-\ Argentina\16\2003
+Agustín Calleri\1976\-\Argentina\16\2003
 Galo Blanco\1976\-\Spain\-\-
 Max Mirnyi\1977\-\Belarus\18\2003
 Stefan Koubek\1977\-\Austria\20\2000
@@ -295,7 +295,7 @@ Sebastián Báez\2000\-\Argentina\18\2024
 Félix Auger-Aliassime\2000\-\Canada\6\2022
 Jannik Sinner\2001\-\Italy\1\2024 (46)
 Jiří Lehečka\2001\-\Czech Republic\23\2024
-Jack Draper\2001\Great Britain\15\2024
+Jack Draper\2001\-\Great Britain\15\2024
 Ben Shelton\2002\-\United States\13\2024
 Lorenzo Musetti\2002\-\Italy\15\2022
 Holger Rune\2003\-\Denmark\4\2023
