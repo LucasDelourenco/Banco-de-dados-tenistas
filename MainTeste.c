@@ -704,6 +704,7 @@ void insere_na_folha(const char *arq_indice, const char *arq_folha, TT novo_atle
     }
     
     TT *atletas = malloc(sizeof(TT) * (num_atletas + 1));
+    memset(atletas, 0, sizeof(TT) * (num_atletas + 1));
     if (fp && num_atletas > 0) {
         rewind(fp);
         fread(atletas, sizeof(TT), num_atletas, fp);
@@ -990,9 +991,12 @@ TT TT_completaInfoChampionsTxt(TT tenista){
 
   //preencher campos: Pontuacao, TorneiosGanhos, anoGanhouTodosGrands
 
-  int indicetorneios, qtdTotTitulos=0, qtdTitulosLidos=0, ano, qtdGrandSlamNesseAno;
+  int indicetorneios=0, qtdTotTitulos=0, qtdTitulosLidos=0, ano=0, qtdGrandSlamNesseAno=0;
   int torneiosPts[15] = {2000,2000,2000,2000,0,0,1000,1000,1000,1000,1000,1000,1000,1000,1000};
   char *lido, sobrenome[51], linha[300], sobrenomeTT[51];
+  memset(sobrenome, '\0', sizeof(char) * 51);
+  memset(sobrenomeTT, '\0', sizeof(char) * 51);
+  memset(linha, '\0', sizeof(char) * 300);
 
   FILE *fp = fopen("champions.txt","r"); //IPC lembrar desse ".txt"!!
   fgets(linha,sizeof(linha),fp); //Pula a primeira linha (aka o cabeçalho)
@@ -1061,6 +1065,7 @@ void TARVBMT_criaPorTxt(int t){ //int t só usado para o insere (se o insere nao
   char *vetPais[tamvet];
   for (int i = 0; i < tamvet; i++) {
     vetPais[i] = malloc(51 * sizeof(char));
+    memset(vetPais[i], '\0', sizeof(char) * 51);
   }
   fgets(linha,sizeof(linha),fp); //Pula o cabeçalho
   while(fgets(linha,sizeof(linha),fp)){ //começa a ler as linhas que importam
@@ -2472,7 +2477,5 @@ int main(void){
     ImprimeMenu();
     scanf("%d", &opcao);
   }
-  
-
-    
+      
 }
