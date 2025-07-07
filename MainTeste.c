@@ -115,28 +115,6 @@ void imprime(const char *arq_indice, int t){
     fclose(fp);
 } 
 
-
-
-//teste para o imprime
-/*
-TT TT_cria_vazio(){
-  TT novo;
-  //tenistas.txt
-  novo.id = -1;
-  novo.ano_nascimento = -1;
-  novo.morte = -1;
-  novo.rank = -1;
-  novo.YoBK = -1;
-  novo.numSem = -1;
-  strcpy(novo.nome,"\0");
-  strcpy(novo.pais,"\0");
-  //champions.txt
-  novo.pontuacao = 0;
-  novo.anoGanhouTodosGrands=-1;
-  for(int i = 0; i<15; i++) novo.TorneiosGanhos[i] = 0;
-  return novo;
-}*/
-
 NOFO* NOFO_cria(int t){
   NOFO *no = malloc(sizeof(NOFO));
   memset(no->rotulo, '\0', sizeof(char[6]));
@@ -970,9 +948,9 @@ int TT_num_titulos(TT tenista){
 }
 
 //Arquivo usado para buscar por pais(dado o nome do pais, saber qual o NACid dele)
-void cria_arq_paises(char *vetPaises[50]){ 
+void cria_arq_paises(char *vetPaises[57]){ 
   FILE *fp = fopen("./auxiliares/paises.bin","wb+");
-  for(int i = 0; i<50; i++) fwrite(vetPaises[i],sizeof(char),51,fp);
+  for(int i = 0; i<57; i++) fwrite(vetPaises[i],sizeof(char),51,fp);
   fclose(fp);
 }
 
@@ -980,7 +958,7 @@ void cria_arq_paises(char *vetPaises[50]){
 void ler_arq_paises(){
   FILE *fp = fopen("./auxiliares/paises.bin","rb+");
   char nome[51];
-  for(int i = 0; i<50; i++){
+  for(int i = 0; i<7; i++){
     fread(&nome,sizeof(char)*51,1,fp);
     printf("%s\n",nome);
   }
@@ -1021,7 +999,7 @@ TT TT_completaInfoChampionsTxt(TT tenista){
         if(indicetorneios<=3) qtdGrandSlamNesseAno++;
 
         //!!HASH!! Inserir o caba na HASH DE VENCEDORES DE TORNEIO COM ANO ("TT.id", "TT.pontuacao" e "ano")
-        THV_insere(tenista.id,indicetorneios,ano); //ABORTADA
+        THV_insere(tenista.id,indicetorneios,ano); //CONCERTADO
         THVT_insere(tenista.id,indicetorneios);
 
         if(qtdTitulosLidos == qtdTotTitulos) break;
@@ -1035,7 +1013,7 @@ TT TT_completaInfoChampionsTxt(TT tenista){
     if(qtdGrandSlamNesseAno==4) tenista.anoGanhouTodosGrands = ano;
 
     //!!HASH!! Inserir o caba na HASH DE PONTUACAO POR ANO ("TT.id", "TT.pontuacao" e "ano")
-    //THP_insere(tenista.id,tenista.pontuacao,ano);
+    //THP_insere(tenista.id,tenista.pontuacao,ano); //ABORTADO
     adicionar_pontuacao(tenista.id,tenista.pontuacao,ano);
 
     if(qtdTotTitulos!=0 && qtdTitulosLidos == qtdTotTitulos) break;
@@ -1045,8 +1023,8 @@ TT TT_completaInfoChampionsTxt(TT tenista){
   return tenista;
 }
 
-int posPaisEmVet(char *pais,char *vetPais[50]){
-    for(int i = 0; i<50; i++) if(vetPais[i]!=NULL && strcmp(pais,vetPais[i]) == 0) return i;
+int posPaisEmVet(char *pais,char *vetPais[57]){
+    for(int i = 0; i<57; i++) if(vetPais[i]!=NULL && strcmp(pais,vetPais[i]) == 0) return i;
     return -1;
 }
 //durante a coleta de infos, jogar nas hashs
@@ -1059,7 +1037,7 @@ void TARVBMT_criaPorTxt(int t){ //int t só usado para o insere (se o insere nao
   TT tenista;
   char *lido, linha[120], nome[51];
   int ano, campo, indPais=10, indCpf=100, semanatemp=-1;
-  int TTidPais,TTidCpf,TTidAno, tamvet = 50; 
+  int TTidPais,TTidCpf,TTidAno, tamvet = 57; 
   //char vetPais[50][51]; //50 paises de no maximo 51 caracteres
   char *vetPais[tamvet];
   for (int i = 0; i < tamvet; i++) {
@@ -1143,63 +1121,6 @@ int int_len(int num){
   }
   return count;
 }
-/*
-TT TARVBMT_busca(int id,int t){ //funcionando corretamente
-  FILE *fp = fopen("INDICES.bin","rb+");
-  if(!fp) return TT_cria_vazio(); //exit(1); com problemas no ubuntu
-  char identfNo[6], filho[6], temp[6];
-  int numchaves,qtdLidos,i,pos,tamPorBloco = (sizeof(char)*6 + sizeof(int) + sizeof(int)*((2*t)-1) + (sizeof(char)*6)*(2*t));
-  int chave;
-  while(1){
-    i=0;
-    qtdLidos = fread(&identfNo,sizeof(char),6,fp);
-    if(qtdLidos > 0){
-      if(strncmp(identfNo,"N",1)==0){ //Se é um Nó
-        fread(&numchaves,sizeof(int),1,fp);
-        fread(&chave,sizeof(int),1,fp); 
-        while((i < numchaves-1) && (id >= chave)){
-          i++;
-          fread(&chave,sizeof(int),1,fp); 
-        }
-        if(i==numchaves-1 && id>=chave){ //se é a ultima chave a ainda é maior, vai descer no filho + 1
-          i++;
-          fread(&chave,sizeof(int),1,fp); //lê o proximo para andar com o ponteiro tbb
-        }
-        pos = ftell(fp);
-        fseek(fp,pos+(sizeof(int) * (t-i)), SEEK_SET);//pula até o começo dos filhos
-        pos = ftell(fp);
-        fseek(fp,pos+((sizeof(char)*6)*i),SEEK_SET);
-        fread(&filho,sizeof(char),6,fp);
-        if(filho[0]=='F'){//Se o filho for folha, o nome dele vai pra identfNo e sai do loop de procura
-          strcpy(identfNo,filho);
-          break;
-        }//caso contrario, se o filho ainda for Nó, vai para ele e repete o argoritmo(até achar uma folha)
-        strcpy(temp,&filho[1]); //Pega os os numeros do filho
-        strcpy(filho,temp);     //Uso do temp para evitar possiveis erros
-        pos = atoi(filho) * tamPorBloco;//pos recebe o valor que iremos pular (ex: se quero ir para o nó N0001 vou pular 1 bloco)
-        fseek(fp,pos,SEEK_SET);
-      }
-      else //Achou uma folha
-        break;
-    }
-    else{
-      printf("\nIdentificacao do No nao encontrado(verificar TARVBMT_buscar  )\n");// PRINT DEBUG APAGAR FUTURAMENTE!!
-      return TT_cria_vazio(); //tenista erro
-    }
-  }
-  fclose(fp);
-  char arqFolha[30];
-  TT tenista;
-  strcpy(arqFolha,"./infos/");   
-  strcat(arqFolha,identfNo);
-  strcat(arqFolha,".bin");
-  fp = fopen(arqFolha,"rb+");
-  qtdLidos = fread(&tenista,sizeof(TT),1,fp);
-  while((qtdLidos>0) && (tenista.id != id)) qtdLidos = fread(&tenista,sizeof(TT),1,fp);
-  if(qtdLidos<=0) return TT_cria_vazio(); //tenista erro
-  return tenista;
-}
-  */
 
 //REMOVE v
 
@@ -1552,7 +1473,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
     if (y->nchaves == t-1){ //Casos 3A e 3B
 
         if ((i < x->nchaves) && (nchaves_filho_dir >= t)){ //CASO3A / irmao da direita
-            printf("\nCASO 3A: i menor que nchaves\n");
+            //printf("\nCASO 3A: i menor que nchaves\n");
             
             z = NOARV_cria(t);
             strcpy(z->rotulo, x->filhos[i+1]);
@@ -1614,7 +1535,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
             return;
         }
         if ((i > 0) && (!z) && (nchaves_filho_esq >= t)){ //CASO3A / irmao da esquerda
-            printf("\nCASO 3A: i igual a nchaves\n");
+            //printf("\nCASO 3A: i igual a nchaves\n");
 
             for(j = y->nchaves; j>0; j--)               //encaixar lugar da nova chave
                 y->chave[j] = y->chave[j-1];
@@ -1675,7 +1596,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
         if (!z){ //CASO3B
             long tamBloco = sizeof(char)*6 + sizeof(int) + sizeof(int) * ((2*t)-1) + sizeof(char)*6*2*t;
             if ((i < x->nchaves) && (nchaves_filho_dir == t-1)){
-                printf("\nCASO 3B: i menor que nchaves\n");
+                //printf("\nCASO 3B: i menor que nchaves\n");
                 z = NOARV_cria(t);
                 strcpy(z->rotulo, x->filhos[i+1]);
 
@@ -1981,7 +1902,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                 return;
             }
             if((i > 0) && (nchaves_filho_esq == t-1)){
-                printf("\nCASO 3B: i igual a nchaves\n");
+                //printf("\nCASO 3B: i igual a nchaves\n");
                 z = NOARV_cria(t);
                 strcpy(z->rotulo, x->filhos[i-1]);
 
@@ -2512,7 +2433,8 @@ void Q7(int t){
   printf("\nEscolha o país\n8    >   .\n");
   while(fr>0){
     i++;
-    printf("\t(%d) - %s\n", i,fd);
+    if(strncmp(fd,"",1)!=0) printf("\t(%d) - %s\n", i,fd);
+    else break;
     fr = fread(fd,sizeof(char),51,fp);
   }
   fclose(fp);
@@ -2528,7 +2450,6 @@ void Q7(int t){
 }
 
 MatTenista* ler_ranking_do_ano(int ano, int *capacidade_total) {
-    // Abre e lê as características da matriz (capacidade e número de jogadores)
     MatCarac caracs;
     FILE* fp_caracs = fopen("./auxiliares/mat_caracs.bin", "rb");
     if (!fp_caracs) return NULL;
@@ -2540,27 +2461,31 @@ MatTenista* ler_ranking_do_ano(int ano, int *capacidade_total) {
         return NULL;
     }
     *capacidade_total = caracs.capacidade;
-
-    // Aloca e lê o mapa de todos os IDs de jogadores
-    int* id_map = (int*) malloc(caracs.capacidade * sizeof(int));
+    int* id_map = (int*)malloc(caracs.capacidade*sizeof(int));
     FILE* fp_ids = fopen("./auxiliares/idMap.bin", "rb");
-    if (!fp_ids) { free(id_map); return NULL; }
+    if (!fp_ids){
+      free(id_map);
+      return NULL;
+    }
     fread(id_map, sizeof(int), caracs.capacidade, fp_ids);
     fclose(fp_ids);
 
-    // Aloca o vetor de resultado e preenche com os dados do ano
     MatTenista* ranking_ano = (MatTenista*) malloc(caracs.capacidade * sizeof(MatTenista));
     FILE* fp_ptos = fopen("./auxiliares/matrizRankingPorAno.bin", "rb");
-    if (!fp_ptos) { free(id_map); free(ranking_ano); return NULL; }
+    if (!fp_ptos){
+      free(id_map);
+      free(ranking_ano);
+      return NULL;
+    }
     int indice_ano = ano - 1990;
 
-    for (int i = 0; i < caracs.capacidade; i++) {
+    for(int i = 0; i<caracs.capacidade; i++){
         ranking_ano[i].id = id_map[i];
-        if (id_map[i] != 0) {
+        if(id_map[i] != 0){
             long offset = ((long)i * NUM_ANOS + indice_ano) * sizeof(int);
             fseek(fp_ptos, offset, SEEK_SET);
             fread(&ranking_ano[i].pontuacao, sizeof(int), 1, fp_ptos);
-        } else {
+        }else{
             ranking_ano[i].pontuacao = 0;
         }
     }
@@ -2575,37 +2500,31 @@ int* obter_top_ids(int ano, int N) {
     if (ano < 1990 || ano > 2024) return NULL;
 
     int capacidade;
-    // 1. Obtém os dados brutos do ranking do ano
     MatTenista* ranking_ano = ler_ranking_do_ano(ano, &capacidade);
     if (!ranking_ano) return NULL;
 
-    // 2. Ordena os jogadores por pontuação
-    qsort(ranking_ano, capacidade, sizeof(MatTenista), comparar_ptos);
+    qsort(ranking_ano, capacidade, sizeof(MatTenista), comparar_ptos); //ordenando por pontuacao
 
-    // 3. Aloca memória para os IDs do resultado final
     int* top_ids = (int*) malloc(N * sizeof(int));
-    if (!top_ids) {
+    if (!top_ids){
         free(ranking_ano);
         return NULL;
     }
     
-    // 4. Preenche o vetor de resultado com os N melhores IDs
     int count = 0;
-    for (int i = 0; i < capacidade && count < N; ++i) {
-        if (ranking_ano[i].id != 0) {
+    for (int i = 0; i < capacidade && count < N; ++i){ //preenchendo vetor com os N melhores
+        if(ranking_ano[i].id != 0){
             top_ids[count] = ranking_ano[i].id;
             count++;
         }
     }
-
-    // 5. Libera a memória do ranking completo e retorna os IDs
     free(ranking_ano);
     return top_ids;
 }
 
 int jogador_esta_no_top(int id_jogador, int* top_ids, int n) {
-    for (int i = 0; i < n; i++) {
-        if (top_ids[i] == id_jogador) {
+    for(int i = 0; i < n; i++){
+        if(top_ids[i] == id_jogador){
             return 1;
         }
     }
@@ -2622,23 +2541,20 @@ void Q6(int indice_torneio, const char* nome_categoria, int t) {
     while (vencedor_atual) {
         for (int i = 0; i < 35 && vencedor_atual->anos[i] != 0; i++) {
             int ano_vitoria = vencedor_atual->anos[i];
-
             int* top_25_ids = obter_top_ids(ano_vitoria, 25);
             if (!top_25_ids) continue;
-
             if (!jogador_esta_no_top(vencedor_atual->id, top_25_ids, 25)) {
                 TT dados_vencedor = TARVBMT_busca(vencedor_atual->id, t);
-                printf("   %s venceu em %d e furou o rank  .\n", dados_vencedor.nome, ano_vitoria);
+                printf("   %s venceu em %d e furou o rank\n", dados_vencedor.nome, ano_vitoria);
                 resp = 1;
             }
-            
             free(top_25_ids);
         }
         vencedor_atual = vencedor_atual->prox;
     }
 
     if (!resp) {
-        printf("Nenhum jogador furou o ranking nesta categoria.\n");
+        printf("Nenhum jogador furou o ranking nesta categoria\n");
     }
     
     TLSEvl_libera(lista_vencedores); 
@@ -2653,7 +2569,8 @@ void ImprimirJogadoresPorPais(int t){
   printf("\nEscolha o país\n9    >   .\n");
   while(fr>0){
     i++;
-    printf("\t(%d) - %s\n", i,fd);
+    if(strncmp(fd,"",1)!=0) printf("\t(%d) - %s\n", i,fd);
+    else break;
     fr = fread(fd,sizeof(char),51,fp);
   }
   fclose(fp);
@@ -2717,7 +2634,7 @@ int main(void){
       scanf(" %[^\n]",nome);
       TT tenista = THNOM_busca(nome, t);
       if(tenista.id > 0){
-        //retira_hashs(tenista.id,tenista.nome);
+        retira_hashs(tenista.id,tenista.nome);
         retira("INDICES.bin",tenista.id,t);
       }
     }
@@ -2749,9 +2666,6 @@ int main(void){
         printf("Insira o ano: ");
         scanf("%d",&ano);
         imprimir_top_N(ano,t,25);//imprime até, no max, 25
-        //TLSEid *lista;
-        //lista = THP_busca_primeiros_ateh_N_Do_Ano(ano,25);//busca até 25 do ano
-        //TLSEid_imprime(lista,t);
       }
       else if(subopcao == 2){
         for(int i = 1990; i<=2024; i++)imprimir_top_N(i,t,25);

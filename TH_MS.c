@@ -74,7 +74,7 @@ TT TARVBMT_busca(int id,int t){ //funcionando corretamente
         break;
     }
     else{
-      printf("\nIdentificacao do No nao encontrado(verificar TARVBMT_buscar  )\n");// PRINT DEBUG APAGAR FUTURAMENTE!!
+      printf("\nIdentificacao do No nao encontrado(verificar TARVBMT_buscar  )\n"); //caso de erro
       fclose(fp);
       return TT_cria_vazio(); //tenista erro
     }
@@ -95,6 +95,7 @@ TT TARVBMT_busca(int id,int t){ //funcionando corretamente
 
 
 /*
+!!!ANOTACAO ANTIGAS!!!
 Ideias para extra:
 -Poder avancar o ano atual, fazendo novos tenistas se aposentarem
 */
@@ -513,41 +514,6 @@ void InicializaHashs(){
   
 }
 
-/*
-THTpts* THP_aloca(int id, int pontuacao){
-  THTpts *novo = (THTpts*) malloc (sizeof (THTpts));
-  novo->id = id;
-  novo->pontuacao = pontuacao;
-  novo->prox = NULL;
-  return novo;
-}
-THT* THNOM_aloca(int id){
-  THT *novo = (THT*) malloc (sizeof (THT));
-  novo->id = id;
-  novo->prox = NULL;
-  return novo;
-}
-THT* THV_aloca(int id, int ano, int qtd){
-  THT *novo = (THT*) malloc (sizeof (THT));
-  novo->id = id;
-  //novo->qtdNoAno = qtd;
-  //novo->ano = ano;
-  novo->prox = NULL;
-  return novo;
-}
-THT* THNAC_aloca(int id){
-  THT *novo = (THT*) malloc (sizeof (THT));
-  novo->id = id;
-  novo->prox = NULL;
-  return novo;
-}
-THT* THVT_aloca(int id){
-  THT *novo = (THT*) malloc (sizeof (THT));
-  novo->id = id;
-  //novo->pontuacao = pontuacao;
-  novo->prox = NULL;
-  return novo;
-}*/
 
 TLSEid *TLSEid_insere_inic(TLSEid *l, int id){
   TLSEid *novo = (TLSEid *) malloc(sizeof(TLSEid));
@@ -576,38 +542,6 @@ TLSEvl *TLSEvl_insere_fim(TLSEvl *l, int id, int *anos){
   return l;
 }
 
-//     //LEMBRAR DE LIBERAR!!!!
-// TLSEid *THP_busca_primeiros_ateh_N_Do_Ano(int ano, int qtd_n){ //Q4 e Q3 //Funcionando!
-//   FILE *fp = fopen("./hashs/THP.bin","rb");
-//   if(!fp)exit(1);
-//   int pos, h = THP_hash(ano);
-//   fseek(fp, h*sizeof(int), SEEK_SET);
-//   fread(&pos, sizeof(int), 1, fp);
-//   fclose(fp);
-//   if(pos == -1)return NULL;
-//   fp = fopen("./hashs/THP_dados.bin","rb");
-//   if(!fp) exit(1);
-//   fseek(fp, pos, SEEK_SET);
-//   THTpts aux;
-//   fread(&aux, sizeof(THTpts), 1, fp);
-
-//   int i = 0; //quase um for
-//   TLSEid *lista = NULL; //inicializando TLSEid
-//   while(i < qtd_n){ //antes era 25 só para Q4
-//     if(aux.status){
-//       lista = TLSEid_insere_fim(lista,aux.id);
-//       i++;
-//     }
-//     if(aux.prox == -1){
-//       fclose(fp);
-//       return lista;
-//     }
-//     fseek(fp, aux.prox, SEEK_SET);
-//     fread(&aux, sizeof(THTpts), 1, fp);
-//   }
-//   fclose(fp);
-//   return lista;
-// }
 //ja retorna o cara usando TARVBMT_busca
 TT THNOM_busca(char nome[51],int t){ //Ou ponteiro para poder retornar NULL
   FILE *fp = fopen("./hashs/THNOM.bin","rb");
@@ -716,39 +650,6 @@ TLSEid *THVT_busca(int indiceTorneios, int *tam){
 }
 
 
-
-
-// void THP_retira(int id){
-//   FILE *fp;
-//   int pos;
-//   for(int i=0; i<35; i++){
-//     fp = fopen("./hashs/THP.bin","rb+");
-//     if(!fp) exit(1);
-//     fseek(fp, i*sizeof(int), SEEK_SET);
-//     fread(&pos, sizeof(int), 1, fp);
-//     fclose(fp);
-//     if(pos == -1)continue;
-//     fp = fopen("./hashs/THP_dados.bin","rb+");
-//     if(!fp)exit(1);
-//     THTpts aux;
-//     while(1){
-//       fseek(fp, pos, SEEK_SET);
-//       fread(&aux, sizeof(THTpts), 1, fp);
-//       if((aux.id == id) && (aux.status)){ //achou
-//         aux.status = 0;
-//         fseek(fp, pos, SEEK_SET);
-//         fwrite(&aux, sizeof(THTpts), 1, fp);
-//         fclose(fp);
-//         break;
-//       }
-//       if(aux.prox == -1){ //nao achou
-//         fclose(fp);
-//         break;
-//       }
-//       pos = aux.prox;
-//     }
-//   }
-// }
 void THNOM_retira(int id, char nome[51]){
   FILE *fp = fopen("./hashs/THNOM.bin","rb+");
   if(!fp) exit(1);
@@ -803,7 +704,6 @@ void THV_retira(int id) {
             return;
         }
 
-        // --- Cycle detection logic ---
         int tartaruga_pos = pos_inicial;
         int lebre_pos = pos_inicial;
         int ciclo_detectado = 0;
@@ -811,18 +711,18 @@ void THV_retira(int id) {
         while (lebre_pos != -1) {
             THVl lebre_aux; // CORRECTED to THVl
             fseek(fp_dados, lebre_pos, SEEK_SET);
-            fread(&lebre_aux, sizeof(THVl), 1, fp_dados); // CORRECTED to sizeof(THVl)
+            fread(&lebre_aux, sizeof(THVl), 1, fp_dados); 
             lebre_pos = lebre_aux.prox; 
 
             if (lebre_pos != -1) {
                 fseek(fp_dados, lebre_pos, SEEK_SET);
-                fread(&lebre_aux, sizeof(THVl), 1, fp_dados); // CORRECTED to sizeof(THVl)
+                fread(&lebre_aux, sizeof(THVl), 1, fp_dados); 
                 lebre_pos = lebre_aux.prox;
             }
 
             THVl tartaruga_aux; // CORRECTED to THVl
             fseek(fp_dados, tartaruga_pos, SEEK_SET);
-            fread(&tartaruga_aux, sizeof(THVl), 1, fp_dados); // CORRECTED to sizeof(THVl)
+            fread(&tartaruga_aux, sizeof(THVl), 1, fp_dados); 
             tartaruga_pos = tartaruga_aux.prox;
 
             if (lebre_pos != -1 && lebre_pos == tartaruga_pos) {
@@ -836,21 +736,18 @@ void THV_retira(int id) {
             fclose(fp_dados);
             continue;
         }
-        // --- End of cycle detection logic ---
 
-
-        // Normal removal logic
         int pos_atual = pos_inicial;
         int item_encontrado = 0;
         while (pos_atual != -1) {
             THVl aux; // CORRECTED to THVl
             fseek(fp_dados, pos_atual, SEEK_SET);
-            fread(&aux, sizeof(THVl), 1, fp_dados); // CORRECTED to sizeof(THVl)
+            fread(&aux, sizeof(THVl), 1, fp_dados); 
 
             if (aux.id == id && aux.status) {
                 aux.status = 0;
                 fseek(fp_dados, pos_atual, SEEK_SET);
-                fwrite(&aux, sizeof(THVl), 1, fp_dados); // CORRECTED to sizeof(THVl)
+                fwrite(&aux, sizeof(THVl), 1, fp_dados); 
                 item_encontrado = 1;
                 break;
             }
@@ -954,208 +851,7 @@ void THVT_retira(int id){
     }
   }
 }
-
-
-//Nao funcionando 100%, concertar na otimizacao (Nao é necessario para o programa)
-/*
-void THP_limpar(int ano){ //retira quem está inválido
-  FILE *fph = fopen("./hashs/THP.bin", "rb+");
-  if(!fph) exit(1);
-  int pos, h = THP_hash(ano);
-  fseek(fph, h*sizeof(int), SEEK_SET);
-  fread(&pos, sizeof(int), 1, fph);
-  int ant = -1, prox, pos_curr;
-  FILE *fp = fopen("./hashs/THP_dados.bin","rb+");
-  if(!fp){
-    fclose(fph);
-    exit(1);
-  }
-  THTpts aux;
-  while(pos != -1){
-    fseek(fp,pos,SEEK_SET);
-    fread(&aux,sizeof(THTpts),1,fp);
-    pos_curr = pos;
-    if(!aux.status){
-      prox = aux.prox;
-      if(ant == -1){
-        fseek(fph,h*sizeof(int),SEEK_SET);
-        fwrite(&aux.prox,sizeof(int),1,fph);
-      }
-      while(prox != -1){
-        fseek(fp,prox,SEEK_SET); //proximo
-        fread(&aux,sizeof(THTpts),1,fp);
-        fseek(fp,pos,SEEK_SET); //atual
-        fwrite(&aux,sizeof(THTpts),1,fp);
-        pos = prox;
-        prox = aux.prox;
-      }
-
-      fseek(fp,pos_curr,SEEK_SET);
-      fread(&aux,sizeof(THTpts),1,fp);
-    }
-    ant = pos_curr;
-    pos = aux.prox;
-  }
-  fclose(fph);
-  fclose(fp);
-}*/
-
-
-// void THP_insere(int id, int pontuacao, int ano){ //funcionando
-//   if(ano < 2024) THP_insere(id,pontuacao,ano+1);
-//   FILE *fph = fopen("./hashs/THP.bin", "rb+");
-//   if(!fph) exit(1);
-//   int pos, h = THP_hash(ano);
-//   fseek(fph, h*sizeof(int), SEEK_SET);
-//   fread(&pos, sizeof(int), 1, fph);
-//   int ant = -1;
-//   FILE *fp = fopen("./hashs/THP_dados.bin","rb+");
-//   if(!fp){
-//     fclose(fph);
-//     exit(1);
-//   }
-//   THTpts aux;
-//   while(pos != -1){ //vendo se ele está lá
-//     fseek(fp, pos, SEEK_SET);
-//     fread(&aux, sizeof(THTpts), 1, fp);
-//     if(aux.id == id && aux.status){ //se está lá, remove e o insere de novo para entrar em nova ordem de pontuacao
-//       fclose(fph);
-//       fclose(fp);
-//       THP_retira(id);
-//       pontuacao += aux.pontuacao; //soma a pontuacao à antiga
-//       THP_insere(id,pontuacao,ano);
-//       return;
-//     }
-//     pos = aux.prox;
-//   }
-//   //Não está na hash (ou está inválido)
-//   fseek(fph, h*sizeof(int), SEEK_SET); //redefinindo pos
-//   fread(&pos, sizeof(int), 1, fph);
-
-//   fseek(fp, pos, SEEK_SET);
-//   fread(&aux, sizeof(THTpts), 1, fp);
-//   while(aux.pontuacao >= pontuacao){
-//     ant = pos;
-//     pos = aux.prox;
-//     if(pos == -1) break;
-//     fseek(fp, pos, SEEK_SET);
-//     fread(&aux, sizeof(THTpts), 1, fp);
-//   }
-//   aux.prox = pos;
-//   aux.id = id;
-//   aux.pontuacao = pontuacao;
-//   aux.status = 1;
-//   fseek(fp, 0L, SEEK_END);
-//   pos = ftell(fp);
-//   fwrite(&aux, sizeof(THTpts), 1, fp);
-//   if(ant != -1){
-//     fseek(fp, ant, SEEK_SET);
-//     fread(&aux, sizeof(THTpts), 1, fp);
-//     aux.prox = pos;
-//     fseek(fp, ant, SEEK_SET);
-//     fwrite(&aux, sizeof(THTpts), 1, fp);
-//   }
-//   else{
-//     fseek(fph, h*sizeof(int), SEEK_SET);
-//     fwrite(&pos, sizeof(int), 1, fph);
-//   }
-//   fclose(fp);
-//   fclose(fph);
-// }
-// void THP_insere_otimizado(FILE *fph, FILE *fp, int id, int pontuacao, int ano) {
-//     if (!fph || !fp) {
-//         // Idealmente, o programa já teria encerrado se os arquivos não abriram.
-//         // Isso é só uma verificação de segurança.
-//         exit(1);
-//     }
-
-//     int h = THP_hash(ano);
-    
-//     // 1. Encontrar o início da lista para o 'ano' dado
-//     fseek(fph, h * sizeof(int), SEEK_SET);
-//     int pos_cabeca;
-//     fread(&pos_cabeca, sizeof(int), 1, fph);
-
-//     int pos_atual = pos_cabeca;
-//     int pos_anterior = -1;
-//     THTpts aux;
-
-//     // 2. Travessia ÚNICA para:
-//     //    a) Encontrar se o ID já existe.
-//     //    b) Encontrar o local correto para inserção (mantendo a ordem).
-//     while (pos_atual != -1) {
-//         fseek(fp, pos_atual, SEEK_SET);
-//         fread(&aux, sizeof(THTpts), 1, fp);
-
-//         // Se o ID já existe e está ativo, atualizamos a pontuação e vamos reinserir
-//         if (aux.id == id && aux.status == 1) {
-//             pontuacao += aux.pontuacao; // Acumula a pontuação
-            
-//             // Marca o registro antigo como inválido ("removido")
-//             aux.status = 0;
-//             fseek(fp, pos_atual, SEEK_SET);
-//             fwrite(&aux, sizeof(THTpts), 1, fp);
-            
-//             // Reseta a busca para inserir o novo registro (com pontuação atualizada) desde o início da lista
-//             pos_atual = pos_cabeca;
-//             pos_anterior = -1;
-//             continue; // Continua o loop para encontrar a nova posição
-//         }
-
-//         // Se a pontuação do registro atual é menor que a nova pontuação,
-//         // encontramos o ponto de inserção. O novo registro deve entrar ANTES dele.
-//         if (aux.pontuacao < pontuacao) {
-//             break;
-//         }
-
-//         pos_anterior = pos_atual;
-//         pos_atual = aux.prox;
-//     }
-
-//     // 3. Inserir o novo nó
-//     THTpts novo_no;
-//     novo_no.id = id;
-//     novo_no.pontuacao = pontuacao;
-//     novo_no.status = 1;
-//     novo_no.prox = pos_atual; // O novo nó aponta para o nó atual (onde o loop parou)
-
-//     // Escreve o novo nó no final do arquivo de dados
-//     fseek(fp, 0L, SEEK_END);
-//     int nova_pos = ftell(fp);
-//     fwrite(&novo_no, sizeof(THTpts), 1, fp);
-
-//     // 4. Atualizar o ponteiro do nó anterior (ou da cabeça da lista)
-//     if (pos_anterior != -1) {
-//         // Inserção no meio ou no fim da lista
-//         fseek(fp, pos_anterior, SEEK_SET);
-//         fread(&aux, sizeof(THTpts), 1, fp); // Lê o nó anterior novamente
-//         aux.prox = nova_pos;                // Atualiza seu 'prox'
-//         fseek(fp, pos_anterior, SEEK_SET);
-//         fwrite(&aux, sizeof(THTpts), 1, fp); // Escreve de volta
-//     } else {
-//         // Inserção no início da lista (a cabeça precisa ser atualizada)
-//         fseek(fph, h * sizeof(int), SEEK_SET);
-//         fwrite(&nova_pos, sizeof(int), 1, fph);
-//     }
-// }
-
-// void THP_insere(int id, int pontuacao, int ano){
-//   FILE *fph = fopen("./hashs/THP.bin","rb+");
-//   FILE *fp = fopen("./hashs/THP_dados.bin","rb+");
-
-//   // Itera do ano em que a pontuação foi ganha até o ano limite
-//   for (int ano_inicial = ano; ano_inicial <= 2024; ++ano_inicial) { //2024 ano limite
-//     // Para cada ano, chama a função otimizada para inserir a pontuação.
-//     // Note que a pontuação passada é a *nova* pontuação. A função interna
-//     // se encarrega de somar com qualquer pontuação que o ID já tenha naquele ano.
-//     //printf("Processando ID %d para o ano %d...\n", id, ano_inicial);
-//     THP_insere_otimizado(fph, fp, id, pontuacao, ano_inicial);
-//   }
-
-//   fclose(fph);
-//   fclose(fp);
-// }
-
+//Aqui jaz THP
 
 void retira_hashs(int id, char nome[51]){
   THNOM_retira(id,nome);
