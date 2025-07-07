@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#define NUM_ANOS (2024 - 1990 + 1)
 //#include "TARVBMT.h"
 
 typedef struct linhaHashRankingPorAno{ //tipo 0
@@ -19,6 +20,14 @@ typedef struct listaEncadeadatht{
   int id;
   struct listaEncadeadatht *prox;
 }TLSEid;
+typedef struct {
+    int id;
+    int pontuacao;
+} MatTenista;
+typedef struct { //caracteristicas da matriz
+    int capacidade;           //qtd de espaços alocados
+    int jogadores_registrados;  //qtd de jogadores
+} MatCarac;
 
 typedef struct tenistas{
   //tenistas.txt
@@ -52,7 +61,7 @@ void THVT_insere(int id, int indiceTorneios);
 TT THNOM_busca(char nome[51],int t);
 TLSEvl *THV_busca_lista_torneio(int indiceTorneio);
 TLSEid *THNAC_busca(int indice_paises_no_arq);
-TLSEid *THVT_busca(int indiceTorneios);
+TLSEid *THVT_busca(int indiceTorneios, int *tam);
 
 //Nao sao usados, mas quem sabe
 /*
@@ -62,6 +71,8 @@ THT* THV_aloca(int id, int ano, int qtd);
 THT* THNAC_aloca(int id);
 THT* THVT_aloca(int id);
 */
+void retira_hashs(int id, char nome[51]);
+void libera_hashs();
 
 TLSEid *TLSEid_insere_inic(TLSEid *l, int id);
 TLSEid *TLSEid_insere_fim(TLSEid *l, int id);
@@ -72,7 +83,7 @@ void adicionar_pontuacao(int id, int pontuacao_nova, int ano_evento);
 void imprimir_top_N(int ano, int t, int N);
 void processar_todos_os_rankings(int t);
 void imprimir_top_N_ALT(int ano, int t, int N, int capacidade, int jogadores_registrados, const int* id_map, const int* matriz_pontos);
-
+int comparar_ptos(const void* a, const void* b);
 
 
 /*

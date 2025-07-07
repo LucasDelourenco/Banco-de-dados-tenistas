@@ -118,16 +118,9 @@ ID: [CPF(100-537)] [Nacion(10-59)] [AnoNasc(10-54)] [Titulos(15)]
 //
 //#define ANO_INICIAL 1990
 //#define ANO_FINAL 2024
-#define NUM_ANOS (2024 - 1990 + 1)
+//#define NUM_ANOS (2024 - 1990 + 1)
 
-typedef struct {
-    int id;
-    int pontuacao;
-} MatTenista;
-typedef struct { //caracteristicas da matriz
-    int capacidade;           //qtd de espaços alocados
-    int jogadores_registrados;  //qtd de jogadores
-} MatCarac;
+
 
 //comparação para o qsort (ordem decrescente de pontuação)
 int comparar_ptos(const void* a, const void* b) {
@@ -390,6 +383,74 @@ void imprimir_top_N(int ano, int t, int N) {
     free(id_map);
     free(ranking_ano);
 }
+
+int remover_jogador(int id_para_remover) {
+    MatCarac caracs;
+    FILE* fp_caracs = fopen("./auxiliares/mat_caracs.bin", "rb+");
+    if (!fp_caracs) {
+        perror("ERRO ao abrir metadados para remocao");
+        return 0;
+    }
+    fread(&caracs, sizeof(MatCarac), 1, fp_caracs);
+
+    FILE* fp_ids = fopen("./auxiliares/idMap.bin", "rb+");
+    if (!fp_ids) {
+        fclose(fp_caracs); 
+        return 0;
+    }
+
+    int indice_alvo = -1;
+    int id_lido = 0;
+    for (int i = 0; i < caracs.capacidade; ++i) {
+        fread(&id_lido, sizeof(int), 1, fp_ids);
+        if (id_lido == id_para_remover) {
+            indice_alvo = i;
+            break; // encontrou!
+        }
+    }
+
+   
+    if (indice_alvo == -1) { //se nao encontrou o indice o tenista nn existe 
+        fclose(fp_ids);
+        fclose(fp_caracs);
+        return 0; 
+    }
+
+    //jogador existe
+    fseek(fp_ids, indice_alvo * sizeof(int), SEEK_SET);
+    int id_vazio = 0;
+    fwrite(&id_vazio, sizeof(int), 1, fp_ids);
+    fclose(fp_ids);
+
+    FILE* fp_ptos = fopen("./auxiliares/matrizRankingPorAno.bin", "rb+");
+    if (!fp_ptos) {
+        fclose(fp_caracs);
+        return 0;
+    }
+
+    int* buffer_zeros = (int*) calloc(NUM_ANOS, sizeof(int));
+    if (!buffer_zeros) {
+        fclose(fp_ptos);
+        fclose(fp_caracs);
+        return 0;
+    }
+
+    long offset = (long)indice_alvo * NUM_ANOS * sizeof(int);
+    fseek(fp_ptos, offset, SEEK_SET);
+
+    fwrite(buffer_zeros, sizeof(int), NUM_ANOS, fp_ptos);
+    free(buffer_zeros);
+    fclose(fp_ptos);
+
+    caracs.jogadores_registrados--;
+    fseek(fp_caracs, 0, SEEK_SET); 
+    fwrite(&caracs, sizeof(MatCarac), 1, fp_caracs);
+    fclose(fp_caracs);
+
+    //printf("Jogador com ID %d removido com sucesso. O slot de indice %d esta agora vago.\n", id_para_remover, indice_alvo);
+    return 1; // Sucesso!
+}
+
 //
 
 
@@ -624,7 +685,7 @@ TLSEid *THNAC_busca(int indice_paises_no_arq){
     fread(&aux, sizeof(THT), 1, fp);
   }
 }
-TLSEid *THVT_busca(int indiceTorneios){
+TLSEid *THVT_busca(int indiceTorneios, int *tam){
   FILE *fp = fopen("./hashs/THVT.bin","rb");
   if(!fp)exit(1);
   int pos, h = THVT_hash(indiceTorneios);
@@ -639,7 +700,11 @@ TLSEid *THVT_busca(int indiceTorneios){
   TLSEid *lista = NULL;
   fread(&aux, sizeof(THT), 1, fp);
   while(1){
-    if(aux.status)lista = TLSEid_insere_fim(lista, aux.id);
+    if(aux.status){
+      lista = TLSEid_insere_fim(lista, aux.id);
+      (*tam)++;
+    }
+    
     if(aux.prox == -1){
       fclose(fp);
       return lista;
@@ -711,36 +776,94 @@ void THNOM_retira(int id, char nome[51]){
     pos = aux.prox;
   }
 }
-void THV_retira(int id){
-  FILE *fp;
-  int pos;
-  for(int i=0; i<4; i++){
-    fp = fopen("./hashs/THV.bin","rb+");
-    if(!fp) exit(1);
-    fseek(fp, i*sizeof(int), SEEK_SET);
-    fread(&pos, sizeof(int), 1, fp);
-    fclose(fp);
-    if(pos == -1)continue;
-    fp = fopen("./hashs/THV_dados.bin","rb+");
-    if(!fp)exit(1);
-    THT aux;
-    while(1){
-      fseek(fp, pos, SEEK_SET);
-      fread(&aux, sizeof(THT), 1, fp);
-      if((aux.id == id) && (aux.status)){
-        aux.status = 0;
-        fseek(fp, pos, SEEK_SET);
-        fwrite(&aux, sizeof(THT), 1, fp);
-        fclose(fp);
-        break;
-      }
-      if(aux.prox == -1){
-        fclose(fp);
-        break;
-      }
-      pos = aux.prox;
+// Função de diagnóstico para THV_retira com detecção de ciclo
+void THV_retira(int id) {
+    FILE *fp_tabela, *fp_dados;
+    int pos_inicial;
+
+    for (int i = 0; i < 4; i++) {
+        fp_tabela = fopen("./hashs/THV.bin", "rb");
+        if (!fp_tabela) {
+            perror("ERRO CRITICO AO ABRIR THV.bin");
+            return;
+        }
+        fseek(fp_tabela, i * sizeof(int), SEEK_SET);
+        fread(&pos_inicial, sizeof(int), 1, fp_tabela);
+        fclose(fp_tabela);
+
+        if (pos_inicial == -1) {
+            continue; // Balde vazio, vai para o próximo
+        }
+
+        fp_dados = fopen("./hashs/THV_dados.bin", "rb+");
+        if (!fp_dados) {
+            perror("ERRO CRITICO AO ABRIR THV_dados.bin");
+            return;
+        }
+
+        // --- INICIO DO ALGORITMO DE DETECÇÃO DE CICLO (TARTARUGA E LEBRE) ---
+        int tartaruga_pos = pos_inicial;
+        int lebre_pos = pos_inicial;
+        int ciclo_detectado = 0;
+
+        while (lebre_pos != -1) {
+            THT lebre_aux;
+            fseek(fp_dados, lebre_pos, SEEK_SET);
+            fread(&lebre_aux, sizeof(THT), 1, fp_dados);
+            lebre_pos = lebre_aux.prox; // Lebre avança 1
+
+            if (lebre_pos != -1) {
+                fseek(fp_dados, lebre_pos, SEEK_SET);
+                fread(&lebre_aux, sizeof(THT), 1, fp_dados);
+                lebre_pos = lebre_aux.prox; // Lebre avança 2
+            }
+
+            THT tartaruga_aux;
+            fseek(fp_dados, tartaruga_pos, SEEK_SET);
+            fread(&tartaruga_aux, sizeof(THT), 1, fp_dados);
+            tartaruga_pos = tartaruga_aux.prox; // Tartaruga avança 1
+
+            // Se a lebre (que é mais rápida) encontra a tartaruga, há um ciclo.
+            if (lebre_pos != -1 && lebre_pos == tartaruga_pos) {
+                // printf("\n!!! DIAGNOSTICO: CICLO INFINITO DETECTADO NO ARQUIVO THV_dados.bin !!!\n");
+                // printf("--- O ciclo foi encontrado no balde de hash de índice %d ---\n", i);
+                // printf("--- Posição do ciclo no arquivo: %d ---\n", lebre_pos);
+                ciclo_detectado = 1;
+                break; // Sai do while de detecção
+            }
+        }
+        
+        if (ciclo_detectado) {
+            fclose(fp_dados); // Fecha o arquivo e vai para o próximo balde
+            continue;
+        }
+        // --- FIM DO ALGORITMO DE DETECÇÃO ---
+
+
+        // Se nenhum ciclo foi detectado, executa a lógica de remoção normal
+        int pos_atual = pos_inicial;
+        int item_encontrado = 0;
+        while (pos_atual != -1) {
+            THT aux;
+            fseek(fp_dados, pos_atual, SEEK_SET);
+            fread(&aux, sizeof(THT), 1, fp_dados);
+
+            if (aux.id == id && aux.status) {
+                aux.status = 0;
+                fseek(fp_dados, pos_atual, SEEK_SET);
+                fwrite(&aux, sizeof(THT), 1, fp_dados);
+                item_encontrado = 1;
+                break;
+            }
+            pos_atual = aux.prox;
+        }
+        
+        fclose(fp_dados);
+        
+        if (item_encontrado) {
+            break; // Já achou e removeu, pode sair do loop for
+        }
     }
-  }
 }
 void THNAC_retira(int id){
   FILE *fp = fopen("./hashs/THNAC.bin","rb+");
@@ -1002,6 +1125,17 @@ void THP_limpar(int ano){ //retira quem está inválido
 //   fclose(fph);
 //   fclose(fp);
 // }
+
+
+void retira_hashs(int id, char nome[51]){
+  THNOM_retira(id,nome);
+  THV_retira(id);
+  THNAC_retira(id);
+  THVT_retira(id);
+  remover_jogador(id);
+}
+
+
 void THNOM_insere(int id, char nome[51]){
   FILE *fph = fopen("./hashs/THNOM.bin", "rb+");
   if(!fph) exit(1);
@@ -1072,68 +1206,88 @@ void insere_ult_pos_vet(int *anos, int ano){
     if(anos[i]==ano) return; //se ja tem esse ano, nao insere
   }
 }
-void THV_insere(int id, int indiceTorneios, int ano){
-  FILE *fph = fopen("./hashs/THV.bin", "rb+");
-  if(!fph) exit(1);
-  int pos, h = THV_hash(indiceTorneios);
-  fseek(fph, h*sizeof(int), SEEK_SET);
-  fread(&pos, sizeof(int), 1, fph);
-  int ant, prim_pos_livre;
-  ant = prim_pos_livre = -1;
-  FILE *fp = fopen("./hashs/THV_dados.bin","rb+");
-  if(!fp){
-    fclose(fph);
-    exit(1);
-  }
-  THVl aux = THVl_inicializa();
-  while(pos != -1){
-    fseek(fp, pos, SEEK_SET);
-    fread(&aux, sizeof(THVl), 1, fp);
-    if(aux.id == id){
-      aux.status = 1;
-      insere_ult_pos_vet(aux.anos,ano);
-      fseek(fp, pos, SEEK_SET);
-      fwrite(&aux, sizeof(THVl), 1, fp);
-      fclose(fp);
-      fclose(fph);
-      return;
+void THV_insere(int id, int indiceTorneios, int ano) {
+    FILE *fph = fopen("./hashs/THV.bin", "rb+");
+    if (!fph) {
+        perror("Erro ao abrir THV.bin para insercao");
+        exit(1);
     }
-    if((!aux.status) && (prim_pos_livre == -1))prim_pos_livre=pos;
-    ant = pos;
-    pos = aux.prox;
-  }
-  if(prim_pos_livre == -1){
-    aux.id = id;
-    insere_ult_pos_vet(aux.anos,ano);
-    aux.prox = -1;
-    aux.status = 1;
-    fseek(fp, 0L, SEEK_END);
-    pos = ftell(fp);
-    fwrite(&aux, sizeof(THVl), 1, fp);
-    if(ant != -1){
-      fseek(fp, ant, SEEK_SET);
-      fread(&aux, sizeof(THVl), 1, fp);
-      aux.prox = pos;
-      fseek(fp, ant, SEEK_SET);
-      fwrite(&aux, sizeof(THVl), 1, fp);
+
+    FILE *fp = fopen("./hashs/THV_dados.bin", "rb+");
+    if (!fp) {
+        // Se o arquivo de dados não existe, vamos criá-lo.
+        fp = fopen("./hashs/THV_dados.bin", "wb+");
+        if (!fp) {
+            fclose(fph);
+            perror("Erro ao criar THV_dados.bin");
+            exit(1);
+        }
     }
-    else{
-      fseek(fph, h*sizeof(int), SEEK_SET);
-      fwrite(&pos, sizeof(int), 1, fph);
+
+    int h = THV_hash(indiceTorneios);
+    int pos_cabeca;
+
+    // 1. Encontra a cabeça da lista ligada para este bucket de hash.
+    fseek(fph, h * sizeof(int), SEEK_SET);
+    fread(&pos_cabeca, sizeof(int), 1, fph);
+
+    int pos_atual = pos_cabeca;
+    int pos_anterior = -1;
+    THVl aux;
+
+    // 2. Percorre a lista para verificar se o jogador já existe.
+    while (pos_atual != -1) {
+        fseek(fp, pos_atual, SEEK_SET);
+        fread(&aux, sizeof(THVl), 1, fp);
+        
+        if (aux.id == id) { // Jogador já existe na lista.
+            if (!aux.status) {
+                aux.status = 1; // Reativa se estiver inativo.
+            }
+            insere_ult_pos_vet(aux.anos, ano); // Adiciona o novo ano.
+            
+            // Escreve a atualização de volta no arquivo.
+            fseek(fp, pos_atual, SEEK_SET);
+            fwrite(&aux, sizeof(THVl), 1, fp);
+            
+            fclose(fp);
+            fclose(fph);
+            return; // Atualização concluída.
+        }
+        pos_anterior = pos_atual;
+        pos_atual = aux.prox;
     }
+
+    // 3. Se o loop terminou, o jogador não está na lista. Inserir um novo.
+
+    // Prepara o novo registro.
+    THVl novo_registro = THVl_inicializa();
+    novo_registro.id = id;
+    novo_registro.status = 1;
+    novo_registro.prox = -1; // Será o último da lista.
+    insere_ult_pos_vet(novo_registro.anos, ano);
+
+    // Encontra a posição final no arquivo de dados para inserir o novo registro.
+    fseek(fp, 0, SEEK_END);
+    int pos_novo_registro = ftell(fp);
+    fwrite(&novo_registro, sizeof(THVl), 1, fp);
+
+    // 4. Conecta o novo registro à lista.
+    if (pos_anterior == -1) {
+        // A lista estava vazia. A cabeça da lista na tabela principal agora aponta para o novo registro.
+        fseek(fph, h * sizeof(int), SEEK_SET);
+        fwrite(&pos_novo_registro, sizeof(int), 1, fph);
+    } else {
+        // A lista não estava vazia. O último nó (em 'pos_anterior') deve apontar para o novo.
+        fseek(fp, pos_anterior, SEEK_SET);
+        fread(&aux, sizeof(THVl), 1, fp);
+        aux.prox = pos_novo_registro; // Atualiza o ponteiro 'prox' do antigo último nó.
+        fseek(fp, pos_anterior, SEEK_SET);
+        fwrite(&aux, sizeof(THVl), 1, fp); // Escreve de volta.
+    }
+
     fclose(fp);
     fclose(fph);
-    return;
-  }
-  fseek(fp, prim_pos_livre, SEEK_SET);
-  fread(&aux, sizeof(THVl), 1, fp);
-  aux.id = id;
-  insere_ult_pos_vet(aux.anos,ano);
-  aux.status = 1;
-  fseek(fp, prim_pos_livre, SEEK_SET);
-  fwrite(&aux, sizeof(THVl), 1, fp);
-  fclose(fp);
-  fclose(fph);
 }
 void THNAC_insere(int id){
   FILE *fph = fopen("./hashs/THNAC.bin", "rb+");
@@ -1299,3 +1453,13 @@ void TLSEid_libera(TLSEid *l) {
 //   fclose(fp);
 // }
 
+void libera_hashs(){
+  remove("THNAC_dados.bin");
+  remove("THNOM_dados.bin");
+  remove("THV_dados.bin");
+  remove("THVT_dados.bin");
+  remove("THNAC.bin");
+  remove("THNOM.bin");
+  remove("THV.bin");
+  remove("THVT.bin");
+}

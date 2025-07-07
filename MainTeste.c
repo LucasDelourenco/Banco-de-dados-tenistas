@@ -246,6 +246,7 @@ int diminui_um(char *nome_ent, char *destino) {
 
     return 1;
 }
+
 long buscar_pos_no_int(char *nome_no, int t){
     if (!nome_no){
       printf("ERRO em buscar_pos_no_int: nome_no nao existe!\n");
@@ -336,6 +337,7 @@ long buscar_pos_no(FILE *f_indice, char *nome_no, int t){
 
   return -1; //O parametro passado está errado, esperava: "Nxxxx\0" ou "Fxxxx\0"
 }
+
 
 void escreve_no(FILE *file, NOINT *no, int t){
   fwrite(no->rotulo, sizeof(char), 6, file);
@@ -704,7 +706,6 @@ void insere_na_folha(const char *arq_indice, const char *arq_folha, TT novo_atle
     }
     
     TT *atletas = malloc(sizeof(TT) * (num_atletas + 1));
-    memset(atletas, 0, sizeof(TT) * (num_atletas + 1));
     if (fp && num_atletas > 0) {
         rewind(fp);
         fread(atletas, sizeof(TT), num_atletas, fp);
@@ -991,12 +992,9 @@ TT TT_completaInfoChampionsTxt(TT tenista){
 
   //preencher campos: Pontuacao, TorneiosGanhos, anoGanhouTodosGrands
 
-  int indicetorneios=0, qtdTotTitulos=0, qtdTitulosLidos=0, ano=0, qtdGrandSlamNesseAno=0;
+  int indicetorneios, qtdTotTitulos=0, qtdTitulosLidos=0, ano, qtdGrandSlamNesseAno;
   int torneiosPts[15] = {2000,2000,2000,2000,0,0,1000,1000,1000,1000,1000,1000,1000,1000,1000};
   char *lido, sobrenome[51], linha[300], sobrenomeTT[51];
-  memset(sobrenome, '\0', sizeof(char) * 51);
-  memset(sobrenomeTT, '\0', sizeof(char) * 51);
-  memset(linha, '\0', sizeof(char) * 300);
 
   FILE *fp = fopen("champions.txt","r"); //IPC lembrar desse ".txt"!!
   fgets(linha,sizeof(linha),fp); //Pula a primeira linha (aka o cabeçalho)
@@ -1024,6 +1022,7 @@ TT TT_completaInfoChampionsTxt(TT tenista){
 
         //!!HASH!! Inserir o caba na HASH DE VENCEDORES DE TORNEIO COM ANO ("TT.id", "TT.pontuacao" e "ano")
         THV_insere(tenista.id,indicetorneios,ano);
+        THVT_insere(tenista.id,indicetorneios);
 
         if(qtdTitulosLidos == qtdTotTitulos) break;
       }
@@ -1214,6 +1213,7 @@ NOARV *NOARV_cria(int t){
     if(!no) printf("FALHA AO ALOCAR MEMORIA\n");
     memset(no->rotulo, '\0', sizeof(no->rotulo));
     no->tenista = (TT*)malloc(sizeof(TT)*(2*t - 1));
+    memset(no->tenista, 0, sizeof(TT) * ((2 * t) - 1));
     no->chave = (int*)malloc(sizeof(int)*((2*t)-1));
     if (!no->chave) printf("Falha ao alocar chaves\n");
     for (int i=0; i<(2*t)-1; i++) no->chave[i] = -1;
@@ -1225,7 +1225,6 @@ NOARV *NOARV_cria(int t){
 
 void NOARV_libera(NOARV *no){
     free(no->filhos);
-    for(int i=0; i<3; i++) printf("%d ", no->chave[i]);
     free(no->chave);
     free(no->tenista);
     free(no);
@@ -1278,7 +1277,7 @@ NOARV* NOARV_limpa(NOARV *no, int t){
   memset(no->rotulo, '\0', sizeof(char[6]));
   memset(no->tenista, 0, sizeof(TT)*(2*t - 1));
   no->nchaves = 0;
-  for (int k; k<(2*t)-1;k++) no->chave[k] = -1;
+  for (int k=0; k<(2*t)-1;k++) no->chave[k] = -1;
   memset(no->filhos, '\0', sizeof(char[6])*2*t);
   return no;
 }
@@ -1334,10 +1333,15 @@ void escreve_mudancas(char *arq_indice, long pos_no, int t, NOARV *x, NOARV *y, 
 
 void ajusta_folhas_remove(char *arq_indice, int nfolhas, int ponto_de_inicio, int t){
     char aux[20], aux2[20], folha1[40], folha2[40];
-    long pont_arq;
-    int j;
+    memset(aux, '\0', sizeof(char[20]));
+    memset(aux2, '\0', sizeof(char[20]));
+    memset(folha1, '\0', sizeof(char[40]));
+    memset(folha2, '\0', sizeof(char[40]));
+    
+    long pont_arq = 0L;
+    int j =0;
     NOARV *no = NOARV_cria(t);
-    FILE *ff, *f_indice = fopen(arq_indice, "rb+");
+    FILE *ff = NULL, *f_indice = fopen(arq_indice, "rb+");
 
     for(j = ponto_de_inicio; j < nfolhas; j++){ //ponto_de_inicio: inicio das folhas que precisam ser corrigidas Ex: ponto_de_inicio = 5 -> F0005 esta desatualizada
       //printf("j:%d\n", j);
@@ -1365,6 +1369,7 @@ void ajusta_folhas_remove(char *arq_indice, int nfolhas, int ponto_de_inicio, in
       }
 
       fclose(ff);
+      ff = NULL;
       remove(folha1);
 
       ff = fopen(folha2, "wb");
@@ -1376,6 +1381,7 @@ void ajusta_folhas_remove(char *arq_indice, int nfolhas, int ponto_de_inicio, in
       escreve_folha_arv(ff, no);
       no = NOARV_limpa(no, t);
       fclose(ff);
+      ff = NULL;
 
       //printf("Folha1: %s - Folha2: %s\n", folha1, folha2);
       //printf("Aux: %s - Aux2: %s\n\n", aux, aux2);
@@ -1398,7 +1404,8 @@ void CASO1(NOARV *no, int i, int t){
     */
     printf("\nCASO 1\n");
     char aux[20];
-    int j;
+    memset(aux, '\0', sizeof(char[20]));
+    int j=0;
     sprintf(aux, "./infos/%s.bin", no->rotulo);
     for (j=i; j<no->nchaves-1; j++) no->tenista[j] = no->tenista[j+1];
     no->nchaves--;
@@ -1410,16 +1417,20 @@ void CASO1(NOARV *no, int i, int t){
     fclose(fp);
 
 }
+
 void remover(char *arq_indice, long pos_no, int id, int t){
     //Caso 3B para i < nchaves foi testado e Caso1 com excecao da folha ficando vazia foi testado, funcionam!
-    FILE *ff, *f_ind = fopen(arq_indice, "rb+");
+    FILE *ff = NULL, *f_ind = fopen(arq_indice, "rb+");
     if (!f_ind) return;
     fseek(f_ind, 0L, SEEK_END);
     if (ftell(f_ind) == 0) return; //Se o arquivo estiver vazio, retornar
-    int i, j;
-    long pont_aux;
+    int i=0, j=0;
+    long pont_aux = 0L;
     char rotulo[6], aux[20];
+
     memset(rotulo, '\0', sizeof(char[6]));
+    memset(aux, '\0', sizeof(char[20]));
+
     fseek(f_ind, pos_no, SEEK_SET); //Procura o no
     fread(rotulo, sizeof(char), 6, f_ind); //Le o rotulo
     if (rotulo[0] == 'F'){ //Se for folha, cria um no pra ler a folha
@@ -1446,7 +1457,8 @@ void remover(char *arq_indice, long pos_no, int id, int t){
             NOARV_libera(folha);
             return;
         }
-        printf("Nao removi da folha, o tenista n existe(?)\n");
+        NOARV_libera(folha);
+        printf("ERRO em remover: Falha em encontrar o tenista que deve ser removido!\n");
     } //O no nao eh folha!
     fseek(f_ind, pos_no, SEEK_SET); //Procura o no
     NOARV *x = NOARV_cria(t); //Le o no atual da arvore
@@ -1496,6 +1508,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
 
         if (!le_folha_arv(ff, &y, t)) printf("Falha ao ler a folha y\n");
         fclose(ff);
+        ff = NULL;
 
         //Aumenta em um e diminui em um para saber o nchaves_tmp
 
@@ -1514,6 +1527,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
             fseek(ff, pont_aux, SEEK_SET);
             fread(&nchaves_filho_dir, sizeof(int), 1, ff);
             fclose(ff);
+            ff = NULL;
         }
         if (i > 0){
             sprintf(aux, "./infos/%s.bin", x->filhos[i-1]);
@@ -1530,6 +1544,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
             fseek(ff, pont_aux, SEEK_SET);
             fread(&nchaves_filho_esq, sizeof(int), 1, ff);
             fclose(ff);
+            ff = NULL;
         }
     }
 
@@ -1550,7 +1565,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
             }
             else {
                 sprintf(aux, "./infos/%s.bin", x->filhos[i+1]);
-                FILE *ff = fopen(aux, "rb");
+                ff = fopen(aux, "rb");
                 if (!ff){
                     fclose(f_ind);
                     NOARV_libera(x);
@@ -1561,13 +1576,13 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                 strcpy(z->rotulo, x->filhos[i+1]);
                 le_folha_arv(ff, &z, t);
                 fclose(ff);
+                ff = NULL;
                 x->chave[i] = z->chave[0] + 1;
                 y->chave[t-1] = z->chave[0];
                 y->tenista[t-1] = z->tenista[0];
             }
             y->nchaves++;
 
-            int j;
             //ajustar chaves de z
             for(j=0; j < z->nchaves-1; j++) {
                 z->chave[j] = z->chave[j+1];
@@ -1584,13 +1599,10 @@ void remover(char *arq_indice, long pos_no, int id, int t){
 
             pont_aux = buscar_pos_no(f_ind, x->filhos[i], t);
             fclose(f_ind);
+            f_ind = NULL;
 
             //Escrever as mudancas feitas
             escreve_mudancas(arq_indice, pos_no, t, x, y, z); //Assume que x n Ã© folha
-
-            NOARV_imprime(x);
-            NOARV_imprime(y);
-            NOARV_imprime(z);
 
             NOARV_libera(x);
             NOARV_libera(y);
@@ -1602,7 +1614,6 @@ void remover(char *arq_indice, long pos_no, int id, int t){
         }
         if ((i > 0) && (!z) && (nchaves_filho_esq >= t)){ //CASO3A / irmao da esquerda
             printf("\nCASO 3A: i igual a nchaves\n");
-            int j;
 
             for(j = y->nchaves; j>0; j--)               //encaixar lugar da nova chave
                 y->chave[j] = y->chave[j-1];
@@ -1631,6 +1642,8 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                     return;
                 }
                 le_folha_arv(ff, &z, t);
+                fclose(ff);
+                ff = NULL;
                 x->chave[i-1] = z->chave[z->nchaves-1];
                 y->chave[0] = z->chave[z->nchaves-1];
                 y->tenista[0] = z->tenista[z->nchaves-1];
@@ -1644,6 +1657,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
 
             pont_aux = buscar_pos_no(f_ind, x->filhos[i], t);
             fclose(f_ind);
+            f_ind = NULL;
             
             //Escrever as mudancas feitas
             escreve_mudancas(arq_indice, pos_no, t, x, y, z); 
@@ -1682,9 +1696,11 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         return;
                     }
                     le_folha_arv(ff, &z, t);
+                    fclose(ff);
+                    ff = NULL;
                 }
 
-                int j = 0;
+                j = 0;
                 while (j < t-1){
                     if (y->rotulo[0] == 'N') y->chave[t+j] = z->chave[j];
                     else{
@@ -1704,9 +1720,10 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                     }
                 }
                 char rotulo_z[6];
+                memset(rotulo_z, '\0', sizeof(char[6]));
                 strcpy(rotulo_z, z->rotulo);
                 NOARV_libera(z);
-                j=0;
+
                 for(j=i; j<x->nchaves-1; j++){ //Limpar as referencias de i
                     x->chave[j] = x->chave[j+1];
                     strcpy(x->filhos[j+1], x->filhos[j+2]);
@@ -1728,8 +1745,9 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                             return;
                         }
                         char rotulo_y[6];
+                        memset(rotulo_y, '\0', sizeof(char[6]));
                         int shift_cont=0;
-                        int num_no, num_y, num_z;
+                        int num_no=0, num_y=0, num_z=0;
                         NOARV *tmp = NOARV_cria(t);
 
                         num_y = atoi(&y->rotulo[1]);
@@ -1752,9 +1770,9 @@ void remover(char *arq_indice, long pos_no, int id, int t){
 
                         escreve_no_arv(ftmp, y, t);
 
-                        int nfolhas;
+                        int nfolhas=0;
                         long ponteiro = tamBloco; //Pula o primeiro bloco
-                        long fimArq;
+                        long fimArq = 0L;
                         fseek(f_ind, 0L, SEEK_END);
                         fimArq = ftell(f_ind) - sizeof(int);
                         fseek(f_ind, ponteiro, SEEK_SET);
@@ -1788,8 +1806,11 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         fread(&nfolhas, sizeof(int), 1, f_ind);
                         fwrite(&nfolhas, sizeof(int), 1, ftmp);
 
+                        NOARV_libera(tmp);
                         fclose(f_ind);
+                        f_ind = NULL;
                         fclose(ftmp);
+                        ftmp = NULL;
 
                         remove(arq_indice);
                         rename("tmp.bin", arq_indice);
@@ -1797,6 +1818,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                     else if (y->rotulo[0] == 'F'){
                         //Escreve um no interno vazio com F0000 cheio
                         fclose(f_ind);
+                        f_ind = NULL;
                         f_ind = fopen(arq_indice, "wb");
                         if (!f_ind){
                             NOARV_libera(x);
@@ -1814,6 +1836,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         fwrite(&temp, sizeof(int), 1, f_ind);
 
                         fclose(f_ind);
+                        f_ind = NULL;
                         NOARV_libera(no);
 
                         remove("./infos/F0001.bin\0");
@@ -1821,6 +1844,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         ff = fopen(aux, "wb");
                         escreve_folha_arv(ff, y);
                         fclose(ff);
+                        ff = NULL;
                     }
                 }
 
@@ -1828,7 +1852,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                 else {
                     if (y->rotulo[0] == 'N'){
 
-                        int num_no, num_x = atoi(&x->rotulo[1]), num_y = atoi(&y->rotulo[1]), num_z = atoi(&rotulo_z[1]);
+                        int num_no =0, num_x = atoi(&x->rotulo[1]), num_y = atoi(&y->rotulo[1]), num_z = atoi(&rotulo_z[1]);
                         FILE *ftmp = fopen("tmp.bin", "wb");
                         if (!ftmp){
                             NOARV_libera(x);
@@ -1840,7 +1864,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         NOARV *no = NOARV_cria(t);
                         int shift_cont=0;
                         long ponteiro = 0L;
-                        long fimArq;
+                        long fimArq = 0L;
                         fseek(f_ind, 0L, SEEK_END);
                         fimArq = ftell(f_ind) - sizeof(int);
                         rewind(f_ind);
@@ -1892,11 +1916,15 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                             ponteiro = ftell(f_ind);
                         }
 
-                        int nfolhas;
+                        NOARV_libera(no);
+
+                        int nfolhas=0;
                         fread(&nfolhas, sizeof(int), 1, f_ind);
                         fclose(f_ind);
+                        f_ind = NULL;
                         fwrite(&nfolhas, sizeof(int), 1, ftmp);
                         fclose(ftmp);
+                        ftmp = NULL;
 
                         remove(arq_indice);
                         rename("tmp.bin", arq_indice);
@@ -1904,8 +1932,9 @@ void remover(char *arq_indice, long pos_no, int id, int t){
 
                     else if (y->rotulo[0] == 'F'){
                         //Diminuir um das folhas de x
-                        int nfolhas, folha_nome_errado;
+                        int nfolhas=0, folha_nome_errado=0;
                         char aux2[20];
+                        memset(aux2, '\0', sizeof(char[20]));
 
                         sprintf(aux, "./infos/%s.bin", rotulo_z);
                         remove(aux);
@@ -1938,21 +1967,24 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         }
                         escreve_folha_arv(ff, y);
                         fclose(ff);
+                        ff = NULL;
 
                         folha_nome_errado = atoi(&x->filhos[x->nchaves][1]) + 1;   //atoi(&x->filhos[j-1][1]) + 1;
 
                         fclose(f_ind);
+                        f_ind = NULL;
                         ajusta_folhas_remove(arq_indice, nfolhas, folha_nome_errado, t);
                     }
                 }
-
-                NOARV_libera(x);
-                NOARV_libera(y);
 
                 f_ind = fopen(arq_indice, "rb");
                 if (!f_ind) return;
                 pont_aux = buscar_pos_no(f_ind, x->rotulo, t);
                 fclose(f_ind);
+                f_ind = NULL;
+
+                NOARV_libera(x);
+                NOARV_libera(y);
 
                 if (pont_aux != -1) remover(arq_indice, pont_aux, id, t);
                 return;
@@ -1984,11 +2016,11 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         return;
                     }
                     le_folha_arv(ff, &z, t);
-                    NOARV_imprime(y);
-                    NOARV_imprime(z);
+                    fclose(ff);
+                    ff = NULL;
                 }
 
-                int j=0;
+                j=0;
                 while(j < t-1){
                     if(y->rotulo[0] == 'N') z->chave[t+j] = y->chave[j];
                     else{
@@ -2005,10 +2037,9 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         memset(y->filhos[j], '\0', sizeof(char)*6);
                     }
                 }
-                NOARV_imprime(y);
-                NOARV_imprime(z);
 
                 char rotulo_y[6];
+                memset(rotulo_y, '\0', sizeof(char[6]));
                 strcpy(rotulo_y, y->rotulo);
                 NOARV_libera(y);
 
@@ -2029,8 +2060,9 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                             return;
                         }
                         char rotulo_z[6];
+                        memset(rotulo_z, '\0', sizeof(char[6]));
                         int shift_cont=0;
-                        int num_no, num_y, num_z;
+                        int num_no=0, num_y=0, num_z=0;
                         NOARV *tmp = NOARV_cria(t);
 
                         num_z = atoi(&z->rotulo[1]);
@@ -2053,9 +2085,9 @@ void remover(char *arq_indice, long pos_no, int id, int t){
 
                         escreve_no_arv(ftmp, z, t);
 
-                        int nfolhas;
+                        int nfolhas=0;
                         long ponteiro = tamBloco; //Pula o primeiro bloco
-                        long fimArq;
+                        long fimArq=0L;
                         fseek(f_ind, 0L, SEEK_END);
                         fimArq = ftell(f_ind) - sizeof(int);
                         fseek(f_ind, ponteiro, SEEK_SET);
@@ -2090,8 +2122,11 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         fread(&nfolhas, sizeof(int), 1, f_ind);
                         fwrite(&nfolhas, sizeof(int), 1, ftmp);
 
+                        NOARV_libera(tmp);
                         fclose(f_ind);
+                        f_ind = NULL;
                         fclose(ftmp);
+                        ftmp = NULL;
 
                         remove(arq_indice);
                         rename("tmp.bin", arq_indice);
@@ -2099,6 +2134,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                     else if (z->rotulo[0] == 'F'){
                         //Escreve um no interno vazio com F0000 cheio
                         fclose(f_ind);
+                        f_ind = NULL;
                         f_ind = fopen(arq_indice, "wb");
                         if (!f_ind){
                             NOARV_libera(x);
@@ -2115,6 +2151,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         fwrite(&temp, sizeof(int), 1, f_ind);
 
                         fclose(f_ind);
+                        f_ind = NULL;
                         NOARV_libera(no);
 
                         remove("./infos/F0001.bin\0");
@@ -2122,6 +2159,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         ff = fopen(aux, "wb");
                         escreve_folha_arv(ff, z);
                         fclose(ff);
+                        ff = NULL;
                     }
                     remover(arq_indice, 0L, id, t);
                 }
@@ -2130,7 +2168,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                 else {
                     if (z->rotulo[0] == 'N'){
 
-                        int num_no, num_x = atoi(&x->rotulo[1]), num_y = atoi(&rotulo_y[1]), num_z = atoi(&z->rotulo[1]);
+                        int num_no=0, num_x = atoi(&x->rotulo[1]), num_y = atoi(&rotulo_y[1]), num_z = atoi(&z->rotulo[1]);
                         FILE *ftmp = fopen("tmp.bin", "wb");
                         if (!ftmp){
                             NOARV_libera(x);
@@ -2142,7 +2180,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         NOARV *no = NOARV_cria(t);
                         int shift_cont = 0;
                         long ponteiro = 0L;
-                        long fimArq;
+                        long fimArq=0L;
                         fseek(f_ind, 0L, SEEK_END);
                         fimArq = ftell(f_ind) - sizeof(int);
                         rewind(f_ind);
@@ -2194,12 +2232,15 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                             }
                             ponteiro = ftell(f_ind);
                         }
+                        NOARV_libera(no);
 
-                        int nfolhas;
+                        int nfolhas=0;
                         fread(&nfolhas, sizeof(int), 1, f_ind);
                         fclose(f_ind);
+                        f_ind = NULL;
                         fwrite(&nfolhas, sizeof(int), 1, ftmp);
                         fclose(ftmp);
+                        ftmp = NULL;
 
                         remove(arq_indice);
                         rename("tmp.bin", arq_indice);
@@ -2207,8 +2248,9 @@ void remover(char *arq_indice, long pos_no, int id, int t){
 
                     else if (z->rotulo[0] == 'F'){
                         //Diminuir um das folhas de x
-                        int nfolhas, folha_nome_errado;
+                        int nfolhas=0, folha_nome_errado=0;
                         char aux2[20];
+                        memset(aux2, '\0', sizeof(char[20]));
 
                         sprintf(aux, "./infos/%s.bin", rotulo_y);
                         remove(aux);
@@ -2241,10 +2283,13 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                         NOARV_imprime(z);
                         escreve_folha_arv(ff, z);
                         fclose(ff);
+                        ff = NULL;
 
                         folha_nome_errado = atoi(&x->filhos[x->nchaves][1]) + 1;  //atoi(&x->filhos[j-1][1]) + 1;
 
                         fclose(f_ind);
+                        f_ind = NULL;
+
                         ajusta_folhas_remove(arq_indice, nfolhas, folha_nome_errado, t);
 
                     }
@@ -2256,6 +2301,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                     }
                     pont_aux = buscar_pos_no(f_ind, z->rotulo, t);
                     fclose(f_ind);
+                    f_ind = NULL;
 
                     NOARV_libera(x);
                     NOARV_libera(z);
@@ -2266,12 +2312,16 @@ void remover(char *arq_indice, long pos_no, int id, int t){
             }
         }
     }
+
     pont_aux = buscar_pos_no(f_ind, x->filhos[i], t);
     fclose(f_ind);
+
+    NOARV_libera(x);
+    NOARV_libera(y);
+
     if (pont_aux != -1) remover(arq_indice, pont_aux, id, t);
     return;
 }
-
 
 void retira(char *arq_indice, int id, int t){
     FILE *f_ind = fopen(arq_indice, "rb");
@@ -2391,6 +2441,179 @@ void Q2(int t){
 }
 
 
+int torneio_i_global_para_cmp = 0;
+int compara_tt(const void *a, const void *b) {
+    const TT *t1 = (const TT *)a;
+    const TT *t2 = (const TT *)b;
+
+    int qtd1 = t1->TorneiosGanhos[torneio_i_global_para_cmp], qtd2 = t2->TorneiosGanhos[torneio_i_global_para_cmp];
+
+    //comparação decrescente por torneios ganhos
+    if (qtd1 != qtd2) return qtd2 - qtd1;
+
+    //se empata, é por ordem alfabética crescente 
+    return strcmp(t1->nome, t2->nome);
+}
+
+
+void Q9(int t) {
+    for (int i = 0; i < 15; i++) {
+        torneio_i_global_para_cmp = i; //global para o compara_tt
+
+        int tam = 0;
+        TLSEid *lista = THVT_busca(i, &tam); 
+
+        TT *vet = (TT *)malloc(sizeof(TT) * tam);
+        TLSEid *aux = lista;
+        for (int j = 0; j < tam; j++) {
+            vet[j] = TARVBMT_busca(aux->id, t);
+            aux = aux->prox;
+        }
+        qsort(vet, tam, sizeof(TT), compara_tt);
+        
+        if(i==0) printf("=====Australian Open=====\n");
+        else if(i==1) printf("=====French Open=====\n");
+        else if(i==2) printf("=====Wimbledon=====\n");
+        else if(i==3) printf("=====US Open=====\n");
+        else if(i==4) printf("=====ATP Finals=====\n");
+        else if(i==5) printf("=====Olympic games=====\n");
+        else if(i==6) printf("=====Indian Wells=====\n");
+        else if(i==7) printf("=====Miami=====\n");
+        else if(i==8) printf("=====Monte Carlo=====\n");
+        else if(i==9) printf("=====Madrid=====\n");
+        else if(i==10) printf("=====Rome=====\n");
+        else if(i==11) printf("=====Canada=====\n");
+        else if(i==12) printf("=====Cincinnati=====\n");
+        else if(i==13) printf("=====Shanghai=====\n");
+        else if(i==14) printf("=====Paris=====\n");
+        for (int j = 0; j < tam; j++) {
+            printf("%d) %s - ganhou %d vezes\n", j + 1, vet[j].nome, vet[j].TorneiosGanhos[i]);
+        }
+        printf("\n");
+
+        free(vet); 
+        TLSEid_libera(lista); 
+    }
+}
+
+MatTenista* ler_ranking_do_ano(int ano, int *capacidade_total) {
+    // Abre e lê as características da matriz (capacidade e número de jogadores)
+    MatCarac caracs;
+    FILE* fp_caracs = fopen("./auxiliares/mat_caracs.bin", "rb");
+    if (!fp_caracs) return NULL;
+    fread(&caracs, sizeof(MatCarac), 1, fp_caracs);
+    fclose(fp_caracs);
+
+    if (caracs.capacidade == 0) {
+        *capacidade_total = 0;
+        return NULL;
+    }
+    *capacidade_total = caracs.capacidade;
+
+    // Aloca e lê o mapa de todos os IDs de jogadores
+    int* id_map = (int*) malloc(caracs.capacidade * sizeof(int));
+    FILE* fp_ids = fopen("./auxiliares/idMap.bin", "rb");
+    if (!fp_ids) { free(id_map); return NULL; }
+    fread(id_map, sizeof(int), caracs.capacidade, fp_ids);
+    fclose(fp_ids);
+
+    // Aloca o vetor de resultado e preenche com os dados do ano
+    MatTenista* ranking_ano = (MatTenista*) malloc(caracs.capacidade * sizeof(MatTenista));
+    FILE* fp_ptos = fopen("./auxiliares/matrizRankingPorAno.bin", "rb");
+    if (!fp_ptos) { free(id_map); free(ranking_ano); return NULL; }
+    int indice_ano = ano - 1990;
+
+    for (int i = 0; i < caracs.capacidade; i++) {
+        ranking_ano[i].id = id_map[i];
+        if (id_map[i] != 0) {
+            long offset = ((long)i * NUM_ANOS + indice_ano) * sizeof(int);
+            fseek(fp_ptos, offset, SEEK_SET);
+            fread(&ranking_ano[i].pontuacao, sizeof(int), 1, fp_ptos);
+        } else {
+            ranking_ano[i].pontuacao = 0;
+        }
+    }
+    
+    fclose(fp_ptos);
+    free(id_map);
+
+    return ranking_ano;
+}
+
+int* obter_top_ids(int ano, int N) {
+    if (ano < 1990 || ano > 2024) return NULL;
+
+    int capacidade;
+    // 1. Obtém os dados brutos do ranking do ano
+    MatTenista* ranking_ano = ler_ranking_do_ano(ano, &capacidade);
+    if (!ranking_ano) return NULL;
+
+    // 2. Ordena os jogadores por pontuação
+    qsort(ranking_ano, capacidade, sizeof(MatTenista), comparar_ptos);
+
+    // 3. Aloca memória para os IDs do resultado final
+    int* top_ids = (int*) malloc(N * sizeof(int));
+    if (!top_ids) {
+        free(ranking_ano);
+        return NULL;
+    }
+    
+    // 4. Preenche o vetor de resultado com os N melhores IDs
+    int count = 0;
+    for (int i = 0; i < capacidade && count < N; ++i) {
+        if (ranking_ano[i].id != 0) {
+            top_ids[count] = ranking_ano[i].id;
+            count++;
+        }
+    }
+
+    // 5. Libera a memória do ranking completo e retorna os IDs
+    free(ranking_ano);
+    return top_ids;
+}
+
+int jogador_esta_no_top(int id_jogador, int* top_ids, int n) {
+    for (int i = 0; i < n; i++) {
+        if (top_ids[i] == id_jogador) {
+            return 1;
+        }
+    }
+    return 0; 
+}
+
+void Q6(int indice_torneio, const char* nome_categoria, int t) {
+    printf("\n--- Analisando '%s' ---\n", nome_categoria);
+  
+    TLSEvl *lista_vencedores = THV_busca_lista_torneio(indice_torneio);
+    TLSEvl *vencedor_atual = lista_vencedores;
+    int resp = 0;
+
+    while (vencedor_atual) {
+        for (int i = 0; i < 35 && vencedor_atual->anos[i] != 0; i++) {
+            int ano_vitoria = vencedor_atual->anos[i];
+
+            int* top_25_ids = obter_top_ids(ano_vitoria, 25);
+            if (!top_25_ids) continue;
+
+            if (!jogador_esta_no_top(vencedor_atual->id, top_25_ids, 25)) {
+                TT dados_vencedor = TARVBMT_busca(vencedor_atual->id, t);
+                if(strncmp(dados_vencedor.nome,"",1)!= 0) printf("   %s venceu em %d e furou o rank  .\n", dados_vencedor.nome, ano_vitoria); //se saiu da hash THV está com nome vazio
+                resp = 1;
+            }
+            
+            free(top_25_ids);
+        }
+        vencedor_atual = vencedor_atual->prox;
+    }
+
+    if (!resp) {
+        printf("Nenhum jogador furou o ranking nesta categoria.\n");
+    }
+    
+    TLSEvl_libera(lista_vencedores); 
+}
+
+
 void ImprimeMenu(){
   printf(
     "\n- - - - - - - - - - - MENU - - - - - - - - - - -\n\n"
@@ -2401,6 +2624,8 @@ void ImprimeMenu(){
     " 3 - Mostrar ordem e pontuacao caso não houvesse aposentados (Q3)\n"
     " 4 - Mostrar ranking por ano (Q4)\n"
     " 5 - Mostrar tenistas que nasceneram no ano em que outro com ranking venceu um GrandSlam (Q2)\n"
+    " 6 - Analisar jogadores que 'furaram' o ranking (Q6)\n" 
+    " 7 - Vencedores por torneio (Q9)\n"
     "-1 - Sair\n\n"
 
     "Opccao: " 
@@ -2413,6 +2638,7 @@ int main(void){
   int t, opcao;
   printf("Insira um t: ");
   scanf("%d",&t);
+  libera_hashs();
   TARVBMT_libera("INDICES.bin");
   printf("\nInicializando estruturas");
   TARVBMT_criaPorTxt(t);
@@ -2428,7 +2654,10 @@ int main(void){
       printf("Insira o nome completo: ");
       scanf(" %[^\n]",nome);
       TT tenista = THNOM_busca(nome, t);
-      if(tenista.id > 0) remover("INDICES.bin",0L,tenista.id,t);
+      if(tenista.id > 0){
+        retira_hashs(tenista.id,tenista.nome);
+        remover("INDICES.bin",0L,tenista.id,t);
+      }
     }
     else if(opcao == 2){
       char nome[51];
@@ -2471,7 +2700,16 @@ int main(void){
     else if(opcao == 5){
       Q2(t);
     }
-    
+    else if(opcao == 6) {
+      printf("\nExecutando análise completa de quem 'furou' o ranking...\n");
+      Q6(0, "Grand Slams", t);
+      Q6(3, "ATP 1000", t);
+      Q6(1, "ATP Finals", t);
+      Q6(2, "Olimpíadas", t);
+    }
+    else if(opcao == 7){
+      Q9(t);
+    }
     
     else printf("Opção inválida\n");
     ImprimeMenu();
