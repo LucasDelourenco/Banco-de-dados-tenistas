@@ -8,8 +8,18 @@
 #define TAM3 50
 #define TAM4 15
 
+THVl THVl_inicializa(){
+  THVl temp;
+  temp.id = -1;
+  memset(temp.anos, 0, sizeof(int) * 35);
+  temp.prox = -1;
+  temp.status = 1;
+  return temp;
+}
+
 TT TT_cria_vazio(){
   TT novo;
+  memset(&novo, 0, sizeof(TT));  // zera todos os bytes da struct
   //tenistas.txt
   novo.id = -1;
   novo.ano_nascimento = -1;
@@ -17,8 +27,6 @@ TT TT_cria_vazio(){
   novo.rank = -1;
   novo.YoBK = -1;
   novo.numSem = -1;
-  strcpy(novo.nome,"");
-  strcpy(novo.pais,"");
   //champions.txt
   novo.pontuacao = 0;
   novo.anoGanhouTodosGrands=-1;
@@ -1077,7 +1085,7 @@ void THV_insere(int id, int indiceTorneios, int ano){
     fclose(fph);
     exit(1);
   }
-  THVl aux;
+  THVl aux = THVl_inicializa();
   while(pos != -1){
     fseek(fp, pos, SEEK_SET);
     fread(&aux, sizeof(THVl), 1, fp);
