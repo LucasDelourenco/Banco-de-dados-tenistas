@@ -186,7 +186,7 @@ int expandir_capacidade() {
       fclose(fp_caracs); 
       return 0; 
     }
-    int* zeros_ptos_linha = (int*) calloc(NUM_ANOS, sizeof(int)); //tipo malloc mas ja inicializa com zeros (vetor)
+    int* zeros_ptos_linha = (int*)calloc(NUM_ANOS, sizeof(int)); //tipo malloc mas ja inicializa com zeros (vetor)
     for (int i = 0; i < slots_a_adicionar; i++) {
         fwrite(zeros_ptos_linha, sizeof(int), NUM_ANOS, fp_ptos);
     }
@@ -202,10 +202,9 @@ int expandir_capacidade() {
     return 1; //expandiu com sucesso
 }
 
-// Retorna o índice para um dado ID (0 à numJogadores-1)
-// Se o jogador é novo, salva ele no primeiro slot vago.
+//retorna o indice para um dado ID (0 a numJogadores-1)
 int obter_ou_criar_indice_por_id(int id) {
-    // Lê os caracsdados para saber os limites atuais
+    //lê os caracs para saber os limites atuais
     MatCarac caracs;
     FILE* fp_caracs = fopen("./auxiliares/mat_caracs.bin", "rb+");
     if (!fp_caracs) return -1;
@@ -221,7 +220,7 @@ int obter_ou_criar_indice_por_id(int id) {
     int primeiro_indice_vago = -1;
     int id_lido;
 
-    // Procura por um jogador existente ou um slot vago dentro da capacidade atual
+    //procura o jogador ou um slot vago dentro da capacidade atual
     for (int i = 0; i < caracs.capacidade; ++i) {
         fread(&id_lido, sizeof(int), 1, fp_ids);
         if (id_lido == id) { //jogador está na matriz
@@ -232,32 +231,27 @@ int obter_ou_criar_indice_por_id(int id) {
             primeiro_indice_vago = i;
         }
     }
-
     if (indice_encontrado != -1) {
         fclose(fp_ids);
         fclose(fp_caracs);
         return indice_encontrado;
     }
-
     if (primeiro_indice_vago != -1) {
         fseek(fp_ids, primeiro_indice_vago * sizeof(int), SEEK_SET);
         fwrite(&id, sizeof(int), 1, fp_ids);
-        
-        //atualiza a contagem de jogadores registrados nos caracsMat
-        caracs.jogadores_registrados++;
+        caracs.jogadores_registrados++;//atualiza a contagem de jogadores registrados nos caracsMat
         fseek(fp_caracs, 0, SEEK_SET);
         fwrite(&caracs, sizeof(MatCarac), 1, fp_caracs);
-
         fclose(fp_ids);
         fclose(fp_caracs);
         return primeiro_indice_vago;
     }
 
-    //jogador nao está e nao há espaços vagos, começa a lógica de expandir
+    //jogador nao está e nao há espaços vagos, precisa expandir
     fclose(fp_ids);
     fclose(fp_caracs); 
     
-    if (!expandir_capacidade()) {
+    if (!expandir_capacidade()) { //expande e caso dê errado retorna
         printf("Nao foi possivel expandir a matrizDeRanking\n");
         return -1;
     }
@@ -267,62 +261,46 @@ int obter_ou_criar_indice_por_id(int id) {
 }
 void adicionar_pontuacao(int id_jogador, int pontuacao_nova, int ano_evento) {
     if (ano_evento < 1990 || ano_evento > 2024) return;
-
     int indice_jogador = obter_ou_criar_indice_por_id(id_jogador);
-    if (indice_jogador == -1) return; // Erro ao obter índice (ex: limite de jogadores)
-
+    if (indice_jogador == -1) return; 
     FILE* fp = fopen("./auxiliares/matrizRankingPorAno.bin", "rb+");
     if (!fp) return;
-
     for (int ano = ano_evento; ano <= 2024; ano++) { //vai atualizando a pontuacao
         int indice_ano = ano - 1990;
         long offset = (long)(indice_jogador * NUM_ANOS + indice_ano) * sizeof(int);
 
         fseek(fp, offset, SEEK_SET);
-        fwrite(&pontuacao_nova, sizeof(int), 1, fp); // antes -> fwrite(&pontuacao, sizeof(int), 1, fp);
+        fwrite(&pontuacao_nova, sizeof(int), 1, fp); //antes -> fwrite(&pontuacao, sizeof(int), 1, fp); 
     }
-
     fclose(fp);
 }
-void imprimir_top_N(int ano, int t, int N) {
+void imprimir_top_N(int ano, int t, int N, int subopcao) {
     if (ano < 1990 || ano > 2024) {
         printf("Ano invalido. Insira um ano entre 1990 e 2024\n");
         return;
     }
-
     //ler os caracs para saber a capacidade atual
     MatCarac caracs;
     FILE* fp_caracs = fopen("./auxiliares/mat_caracs.bin", "rb");
     if (!fp_caracs) exit(1);
     fread(&caracs, sizeof(MatCarac), 1, fp_caracs);
     fclose(fp_caracs);
-
     //se a capacidade for 0, não há nada a fazer.
     if (caracs.capacidade == 0) {
         printf("O banco de dados esta vazio. Nao ha jogadores para classificar.\n");
         return;
     }
-
-    /*
-    //verificando se a alocação de memória falhou
-    if (!id_map || !ranking_ano) {
-        free(id_map);      //libera o que quer que tenha sido alocado
-        free(ranking_ano);
-        return;
-    }*/
-
+   
     FILE* fp_ids = fopen("./auxiliares/idMap.bin", "rb");
     if (!fp_ids) return;
     int* id_map = (int*) malloc(caracs.capacidade * sizeof(int)); //vetor dos ids
     if (id_map == NULL) {
-    perror("Falha ao alocar memoria para id_map");
-    // Você pode querer fechar outros arquivos abertos aqui antes de retornar
-    return;
+      fclose(fp_ids);
+      return;
     }
 
     fread(id_map, sizeof(int), caracs.capacidade, fp_ids);
     fclose(fp_ids);
-
     FILE* fp_ptos = fopen("./auxiliares/matrizRankingPorAno.bin", "rb");
     if (!fp_ptos){
       free(id_map);
@@ -333,8 +311,8 @@ void imprimir_top_N(int ano, int t, int N) {
     MatTenista* ranking_ano = (MatTenista*) malloc(caracs.capacidade * sizeof(MatTenista));
     if (ranking_ano == NULL) {
       perror("Falha ao alocar memoria para ranking_ano");
-      free(id_map); // Libera o que já foi alocado
-      fclose(fp_ptos); // Fecha o arquivo aberto
+      free(id_map); 
+      fclose(fp_ptos); 
       return;
     }
     int indice_ano = ano - 1990;
@@ -345,12 +323,8 @@ void imprimir_top_N(int ano, int t, int N) {
             ranking_ano[i].pontuacao = 0;
             continue;
         }
-
-        //pega o id do jogador
-        ranking_ano[i].id = id_map[i]; 
-        
-        // Calcula a posição do ponto no arquivo
-        long offset = ((long)i * NUM_ANOS + indice_ano) * sizeof(int);
+        ranking_ano[i].id = id_map[i];  //pega o id do jogador
+        long offset = ((long)i * NUM_ANOS + indice_ano) * sizeof(int); //pos do ponto no arquivo
         fseek(fp_ptos, offset, SEEK_SET);
         fread(&ranking_ano[i].pontuacao, sizeof(int), 1, fp_ptos);
     }
@@ -376,9 +350,11 @@ void imprimir_top_N(int ano, int t, int N) {
         if (ignorarVazios && (ranking_ano[i].id == 0 || ranking_ano[i].pontuacao == 0)) {
             continue;
         }
-
-        printf("%3d) %s - Pontuacao: %d\n", count_impressos + 1, TARVBMT_busca(ranking_ano[i].id, t).nome,ranking_ano[i].pontuacao);
-        count_impressos++;
+        TT tenista = TARVBMT_busca(ranking_ano[i].id, t);
+        if((subopcao == 1) || (subopcao == 2 && ano - tenista.ano_nascimento < 39)){
+          printf("%3d) %s - Pontuacao: %d\n", count_impressos + 1, tenista.nome,ranking_ano[i].pontuacao);
+          count_impressos++;
+        }
     }
     printf("--------------------------------\n");
     free(id_map);

@@ -2395,7 +2395,7 @@ void Q9(int t) {
         else if(i==13) printf("=====Shanghai=====\n");
         else if(i==14) printf("=====Paris=====\n");
         for (int j = 0; j < tam; j++) {
-            printf("%d) %s - ganhou %d vezes\n", j + 1, vet[j].nome, vet[j].TorneiosGanhos[i]);
+            if(strncmp(vet[j].nome,"",1)!=0)  printf("%d) %s - ganhou %d vezes\n", j + 1, vet[j].nome, vet[j].TorneiosGanhos[i]);
         }
         printf("\n");
 
@@ -2473,7 +2473,7 @@ MatTenista* ler_ranking_do_ano(int ano, int *capacidade_total) {
     fread(id_map, sizeof(int), caracs.capacidade, fp_ids);
     fclose(fp_ids);
 
-    MatTenista* ranking_ano = (MatTenista*) malloc(caracs.capacidade * sizeof(MatTenista));
+    MatTenista* ranking_ano = (MatTenista*)malloc(caracs.capacidade * sizeof(MatTenista));
     FILE* fp_ptos = fopen("./auxiliares/matrizRankingPorAno.bin", "rb");
     if (!fp_ptos){
       free(id_map);
@@ -2547,8 +2547,8 @@ void Q6(int indice_torneio, const char* nome_categoria, int t) {
             int* top_25_ids = obter_top_ids(ano_vitoria, 25);
             if (!top_25_ids) continue;
             if (!jogador_esta_no_top(vencedor_atual->id, top_25_ids, 25)) {
-                TT dados_vencedor = TARVBMT_busca(vencedor_atual->id, t);
-                printf("   %s venceu em %d e furou o rank\n", dados_vencedor.nome, ano_vitoria);
+                TT tenista = TARVBMT_busca(vencedor_atual->id, t);
+                if(strncmp(tenista.nome,"",1)!=0) printf("   %s venceu em %d e furou o rank\n", tenista.nome, ano_vitoria);
                 resp = 1;
             }
             free(top_25_ids);
@@ -2563,7 +2563,7 @@ void Q6(int indice_torneio, const char* nome_categoria, int t) {
     TLSEvl_libera(lista_vencedores); 
 }
 
-void ImprimirJogadoresPorPais(int t){
+void ImprimirJogadoresPorPais(int t, int subopcao){
   FILE *fp = fopen("./auxiliares/paises.bin","rb+");
   if(!fp) exit(1);
   int fr, idpais, i=0;
@@ -2584,11 +2584,12 @@ void ImprimirJogadoresPorPais(int t){
   TLSEid *lista = THNAC_busca(idpais), *inicio_lista;
   inicio_lista = lista;
   while(lista){
-    i++;
-    char *nome = TARVBMT_busca(lista->id,t).nome;
-    printf("%d) %s - ID:%d\n",i,nome,lista->id);
+    TT tenista = TARVBMT_busca(lista->id,t);
+    if((subopcao==1)||(subopcao == 2 && 2025 - tenista.ano_nascimento < 39)||(subopcao == 3 && 2025 - tenista.ano_nascimento >= 39))
+    printf("%d) %s - ID:%d\n",++i,tenista.nome,lista->id);
     lista = lista->prox;
   }
+  if(i==0) printf("Não há jogadores desse pais na arvore\n");
   TLSEid_libera(inicio_lista);
 }
 
@@ -2621,6 +2622,7 @@ int main(void){
   int t, opcao;
   printf("Insira um t: ");
   scanf("%d",&t);
+  if(t<2) t= 2;
   libera_hashs();
   TARVBMT_libera("INDICES.bin");
   printf("\nInicializando estruturas");
@@ -2640,16 +2642,22 @@ int main(void){
       if(tenista.id > 0){
         retira("INDICES.bin",tenista.id,t);
       }
+      else printf("\n...Tenista nao encontrado...");
     }
     else if(opcao == 2){
+      int subopcao;
+      printf("%d  >    .\n\t1 - Qualquer\n\t2 - Em atividade\n\n\tOpccao: ",opcao);
+      scanf("%d",&subopcao);
+      
       char nome[51];
       printf("Insira o nome completo: ");
       scanf(" %[^\n]",nome);
       TT tenista = THNOM_busca(nome, t);
       if(tenista.id == -1) printf("\nTenista não encontrado\nVerifique a grafica de '%s'\n\n",nome);
+      else if(subopcao==2 && 2025 - tenista.ano_nascimento >= 39) printf("\nEsse jogador está aposentado atualmente\n");
       else{
         printf("\nTenista : %s\nNasceu em %d - %s\n",tenista.nome,tenista.ano_nascimento,tenista.pais);
-        if(2025 - tenista.ano_nascimento >= 35)printf("Está aposentado\n");
+        if(2025 - tenista.ano_nascimento >= 39)printf("Está aposentado atualmente\n");
         else printf("Está ativo\n");
         if(tenista.morte != -1){
           printf("Morreu em %d\n",tenista.morte);
@@ -2658,20 +2666,25 @@ int main(void){
       }
     }
     else if(opcao == 3){
-      imprimir_top_N(2024,t,-10);//imprime até, no max, 25
+      imprimir_top_N(2024,t,-10,1);//imprime até, no max, 25
     }
     else if(opcao == 4){
-      int subopcao;
-      printf("%d  >    .\n\t1 - Inserir um ano\n\t2 - Mostrar todos os anos\n\n\tOpccao: ",opcao);
+      int subopcao, subopcao2;
+      printf("\n%d  >    .\n\t1 - Inserir um ano\n\t2 - Mostrar todos os anos\n\n\tOpccao: ",opcao);
       scanf("%d",&subopcao);
+      printf("\n%d  >    %d  >    .\n\t\t1 - Ativos e Aposentados (extra)\n\t\t2 - Apenas Ativos\n\n\t\tOpccao: ",opcao,subopcao);
+      scanf("%d",&subopcao2);
+      if(subopcao2<1 || subopcao2 > 2) subopcao2 == 2;
       if(subopcao == 1){
         int ano;
         printf("Insira o ano: ");
         scanf("%d",&ano);
-        imprimir_top_N(ano,t,25);//imprime até, no max, 25
+        if(ano < 1990) ano = 1990;
+        else if(ano > 2025) ano = 2024;
+        imprimir_top_N(ano,t,25,subopcao2);//imprime até, no max, 25
       }
       else if(subopcao == 2){
-        for(int i = 1990; i<=2024; i++)imprimir_top_N(i,t,25);
+        for(int i = 1990; i<=2024; i++)imprimir_top_N(i,t,25,subopcao2);
       }else{
         printf("\nInsira um valor válido\n\n");
       }
@@ -2694,7 +2707,11 @@ int main(void){
       Q7(t);
     }
     else if(opcao == 9){
-      ImprimirJogadoresPorPais(t);
+      int subopcao;
+      printf("%d  >    .\n\t1 - Todos\n\t2 - Em atividade\n\t3 - Aposentados\n\tOpccao: ",opcao);
+      scanf("%d",&subopcao);
+      if(subopcao<1 || subopcao>3) subopcao=1;
+      ImprimirJogadoresPorPais(t,subopcao);
     }
     else if(opcao == 10){
       Q5(t);

@@ -80,7 +80,7 @@ void TLSEvl_libera(TLSEvl *l);
 void TLSEid_libera(TLSEid *l);
 
 void adicionar_pontuacao(int id, int pontuacao_nova, int ano_evento);
-void imprimir_top_N(int ano, int t, int N);
+void imprimir_top_N(int ano, int t, int N, int subopcao);
 void processar_todos_os_rankings(int t);
 void imprimir_top_N_ALT(int ano, int t, int N, int capacidade, int jogadores_registrados, const int* id_map, const int* matriz_pontos);
 int comparar_ptos(const void* a, const void* b);
