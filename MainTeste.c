@@ -1216,8 +1216,8 @@ int le_no_arv(FILE *f_ind, NOARV **no, int t){
 void escreve_mudancas(char *arq_indice, long pos_no, int t, NOARV *x, NOARV *y, NOARV*z){
     FILE *f_ind = fopen(arq_indice, "rb+");
     if (!f_ind) return;
-    NOARV_imprime(y);
-    NOARV_imprime(z);
+    //NOARV_imprime(y);
+    //NOARV_imprime(z);
     long pont_aux;
     char aux[20];
     fseek(f_ind, pos_no, SEEK_SET);
@@ -1650,9 +1650,8 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                     x->chave[j] = x->chave[j+1];
                     strcpy(x->filhos[j+1], x->filhos[j+2]);
                 }
-                if (j != i) j--;
-                x->chave[j+1] = -1;
-                memset(x->filhos[j+2], '\0', sizeof(x->filhos[j+2]));
+                x->chave[j] = -1;
+                memset(x->filhos[j+1], '\0', sizeof(x->filhos[j+1]));
                 x->nchaves--;
 
                 if(!x->nchaves){
@@ -2173,7 +2172,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                             sprintf(aux2, "./infos/%s.bin", x->filhos[j]);
                             rename(aux, aux2);
                         }
-                        NOARV_imprime(x);
+                        //NOARV_imprime(x);
                         fseek(f_ind, pos_no, SEEK_SET);
                         escreve_no_arv(f_ind, x, t);
                         sprintf(aux, "./infos/%s.bin", z->rotulo);
@@ -2184,7 +2183,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
                             NOARV_libera(z);
                             return;
                         }
-                        NOARV_imprime(z);
+                        //NOARV_imprime(z);
                         escreve_folha_arv(ff, z);
                         fclose(ff);
                         ff = NULL;
@@ -2236,7 +2235,7 @@ void retira(char *arq_indice, int id, int t){
     if (ftell(f_ind) == 0) return;
     fclose(f_ind);
     if (TARVBMT_busca(id, t).id == -1) return;
-    printf("Removendo tenista de id:%d.....", id);
+    printf("Removendo tenista de id:%d.....\n", id);
     remover(arq_indice, 0L, id, t);
 }
 //REMOVE^
@@ -2427,8 +2426,8 @@ void Q5(int t){
 void Q7(int t){
   FILE *fp = fopen("./auxiliares/paises.bin","rb+");
   if(!fp) exit(1);
-  int fr, idpais, i=0;
-  char *fd;
+  int fr=0, idpais, i=0;
+  char fd[51];
   fr = fread(fd,sizeof(char),51,fp);
   printf("\nEscolha o país\n8    >   .\n");
   while(fr>0){
@@ -2441,12 +2440,13 @@ void Q7(int t){
   printf("\n\tOpccao: ");
   scanf("%d",&idpais);
   idpais--;
-  TLSEid *lista = THNAC_busca(idpais);
+  TLSEid *lista = THNAC_busca(idpais), *inicio_lista;
+  inicio_lista = lista;
   while(lista){
     if(lista->id > 0) retira("INDICES.bin",lista->id,t);
     lista = lista->prox;
   }
-  TLSEid_libera(lista);
+  TLSEid_libera(inicio_lista);
 }
 
 MatTenista* ler_ranking_do_ano(int ano, int *capacidade_total) {
@@ -2564,7 +2564,7 @@ void ImprimirJogadoresPorPais(int t){
   FILE *fp = fopen("./auxiliares/paises.bin","rb+");
   if(!fp) exit(1);
   int fr, idpais, i=0;
-  char *fd;
+  char fd[51];
   fr = fread(fd,sizeof(char),51,fp);
   printf("\nEscolha o país\n9    >   .\n");
   while(fr>0){
@@ -2578,14 +2578,15 @@ void ImprimirJogadoresPorPais(int t){
   scanf("%d",&idpais);
   idpais--;
   i =0;
-  TLSEid *lista = THNAC_busca(idpais);
+  TLSEid *lista = THNAC_busca(idpais), *inicio_lista;
+  inicio_lista = lista;
   while(lista){
     i++;
     char *nome = TARVBMT_busca(lista->id,t).nome;
     printf("%d) %s - ID:%d\n",i,nome,lista->id);
     lista = lista->prox;
   }
-  TLSEid_libera(lista);
+  TLSEid_libera(inicio_lista);
 }
 
 // Sebastian Korda
