@@ -1324,7 +1324,7 @@ void CASO1(NOARV *no, int i, int t){
     }
     return;    
     */
-    printf("\nCASO 1\n");
+    //printf("\nCASO 1\n");
     char aux[20];
     memset(aux, '\0', sizeof(char[20]));
     int j=0;
