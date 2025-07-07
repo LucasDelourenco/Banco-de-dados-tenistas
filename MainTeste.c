@@ -2664,9 +2664,9 @@ void ImprimirJogadoresPorPais(int t){
   TLSEid *lista = THNAC_busca(idpais);
   while(lista){
     i++;
-    if(lista->id > 0) printf("%d) %s - ID:%d",i,TARVBMT_busca(lista->id,t).nome,lista->id);
+    char *nome = TARVBMT_busca(lista->id,t).nome;
+    printf("%d) %s - ID:%d\n",i,nome,lista->id);
     lista = lista->prox;
-    printf("%d ",i);
   }
   TLSEid_libera(lista);
 }
