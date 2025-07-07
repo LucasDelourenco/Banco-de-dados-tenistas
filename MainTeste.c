@@ -1537,10 +1537,19 @@ void remover(char *arq_indice, long pos_no, int id, int t){
         if ((i > 0) && (!z) && (nchaves_filho_esq >= t)){ //CASO3A / irmao da esquerda
             //printf("\nCASO 3A: i igual a nchaves\n");
 
-            for(j = y->nchaves; j>0; j--)               //encaixar lugar da nova chave
+            if (y->rotulo[0] == 'N'){
+                for(j = y->nchaves; j>0; j--)               //encaixar lugar da nova chave
                 y->chave[j] = y->chave[j-1];
-            for(j = y->nchaves+1; j>0; j--) //encaixar lugar dos filhos da nova chave
+               for(j = y->nchaves+1; j>0; j--) //encaixar lugar dos filhos da nova chave
                 strcpy(y->filhos[j], y->filhos[j-1]);
+            }
+            else if (y->rotulo[0] == 'F'){
+                for(j = y->nchaves; j>0; j--){
+                    y->chave[j] = y->chave[j-1];
+                    y->tenista[j] = y->tenista[j-1];
+                }
+            }
+
 
             z = NOARV_cria(t);
             strcpy(z->rotulo, x->filhos[i-1]);
@@ -2228,6 +2237,7 @@ void remover(char *arq_indice, long pos_no, int id, int t){
 
 
 
+
 void retira(char *arq_indice, int id, int t){
     FILE *f_ind = fopen(arq_indice, "rb");
     if (!f_ind) return;
@@ -2605,7 +2615,7 @@ void ImprimeMenu(){
     " 2 - Buscar por nome completo\n"
     " 3 - Mostrar ordem e pontuacao caso não houvesse aposentados (Q3)\n"
     " 4 - Mostrar ranking por ano (Q4)\n"
-    " 5 - Mostrar tenistas que nasceneram no ano em que outro com ranking venceu um GrandSlam (Q2)\n"
+    " 5 - Mostrar tenistas que nasceram no ano em que outro com ranking venceu um GrandSlam (Q2)\n"
     " 6 - Analisar jogadores que 'furaram' o ranking (Q6)\n" 
     " 7 - Vencedores por torneio (Q9)\n"
     " 8 - Retirar jogadores de um Pais\n"
